@@ -1,7 +1,5 @@
 package org.example.modelos;
 
-import org.example.DetalleMuestraSismica;
-
 import java.util.ArrayList;
 
 public class MuestraSismica {

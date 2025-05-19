@@ -81,4 +81,18 @@ public class ReclamoGarantia {
 
     public ReclamoGarantia() {
     }
+
+
+    @Override
+    public String toString() {
+        return "ReclamoGarantia{" +
+                "fabricante=" + fabricante +
+                ", comentario='" + comentario + '\'' +
+                ", fechaReclamo='" + fechaReclamo + '\'' +
+                ", fechaRespuesta='" + fechaRespuesta + '\'' +
+                ", nroReclamo=" + nroReclamo +
+                ", respuestaFabricante='" + respuestaFabricante + '\'' +
+                ", sismografo=" + sismografo +
+                '}';
+    }
 }

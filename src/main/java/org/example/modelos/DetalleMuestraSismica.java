@@ -1,6 +1,4 @@
-package org.example;
-
-import org.example.modelos.TipoDeDato;
+package org.example.modelos;
 
 public class DetalleMuestraSismica {
 
