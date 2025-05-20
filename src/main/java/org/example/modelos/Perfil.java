@@ -3,6 +3,7 @@ package org.example.modelos;
 import java.util.ArrayList;
 
 public class Perfil {
+
     private String nombre;
 
     private String descripcion;
@@ -23,7 +24,11 @@ public class Perfil {
     }
 
     public void setPermisos(ArrayList<Permiso> permisos) {
-        this.permisos = permisos;
+        if(!permisos.isEmpty()){
+            this.permisos = permisos;
+        }else{
+            System.out.println("No se puede agregar el permiso");
+        }
     }
 
     public String getDescripcion() {
@@ -35,9 +40,13 @@ public class Perfil {
     }
 
     public Perfil(String nombre, ArrayList<Permiso> permisos, String descripcion) {
-        this.nombre = nombre;
-        this.permisos = permisos;
-        this.descripcion = descripcion;
+        if(!permisos.isEmpty()){
+            this.nombre = nombre;
+            this.permisos = permisos;
+            this.descripcion = descripcion;
+        }else{
+            System.out.println("Se necesitan agregar permisos que no sean vacios");
+        }
     }
 
     public Perfil() {
