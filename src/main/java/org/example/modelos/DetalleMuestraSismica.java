@@ -11,7 +11,11 @@ public class DetalleMuestraSismica {
     }
 
     public void setTipoDeDato(TipoDeDato tipoDeDato) {
-        this.tipoDeDato = tipoDeDato;
+        if(tipoDeDato==null){
+            System.out.println("Tipo de dato nulo");
+        }else{
+            this.tipoDeDato = tipoDeDato;
+        }
     }
 
     public Integer getValor() {
