@@ -6,11 +6,12 @@ import java.util.ArrayList;
 public class EventoSismico {
 
     //Atributos relacionales
-    private ClasificacionSismo clasificacion;
-    private MagnitudRichter magnitud;
-    private OrigenDeGeneracion origenGeneracion;
-    private AlcanceSismo alcanceSismo;
-    private Estado estado;
+    private ClasificacionSismo clasificacion; //
+    private MagnitudRichter magnitud; //
+    private OrigenDeGeneracion origenGeneracion; //
+    private AlcanceSismo alcanceSismo; //
+    private Estado estado; //
+    
     private Empleado analistaSupervisor;
 
     private ArrayList<CambioEstado> cambioEstado;
@@ -18,11 +19,11 @@ public class EventoSismico {
 
     //Atributos propios
     private LocalDateTime fechaHoraFin;
-    private LocalDateTime fechaHoraOcurrencia;
-    private Integer latitudEpicentro;
-    private Integer latitudHipocentro;
-    private Integer longitudEpicentro;
-    private Integer longitudHipocentro;
+    private LocalDateTime fechaHoraOcurrencia; //
+    private Integer latitudEpicentro; //
+    private Integer latitudHipocentro;//
+    private Integer longitudEpicentro;//
+    private Integer longitudHipocentro;//
 
     private Integer valorMagnitud;
 
@@ -148,4 +149,29 @@ public class EventoSismico {
 
     public EventoSismico() {
     }
+
+@Override
+public String toString() {
+    return "EventoSismico {\n" +
+           "  clasificacion: " + clasificacion + ",\n" +
+           "  magnitud: " + magnitud + ",\n" +
+           "  origenGeneracion: " + origenGeneracion + ",\n" +
+           "  alcanceSismo: " + alcanceSismo + ",\n" +
+           "  estado: " + estado + ",\n" +
+           "  analistaSupervisor: " + analistaSupervisor + ",\n" +
+           "  cambioEstado: " + cambioEstado + ",\n" +
+           "  serieTemporal: " + serieTemporal + ",\n" +
+           "  fechaHoraFin: " + fechaHoraFin + ",\n" +
+           "  fechaHoraOcurrencia: " + fechaHoraOcurrencia + ",\n" +
+           "  latitudEpicentro: " + latitudEpicentro + ",\n" +
+           "  latitudHipocentro: " + latitudHipocentro + ",\n" +
+           "  longitudEpicentro: " + longitudEpicentro + ",\n" +
+           "  longitudHipocentro: " + longitudHipocentro + ",\n" +
+           "  valorMagnitud: " + valorMagnitud + "\n" +
+           '}';
+}
+
+    
+    
+    
 }
