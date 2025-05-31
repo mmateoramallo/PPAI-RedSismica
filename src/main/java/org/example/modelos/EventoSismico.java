@@ -2,6 +2,7 @@ package org.example.modelos;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 public class EventoSismico {
 
@@ -15,7 +16,7 @@ public class EventoSismico {
     private Empleado analistaSupervisor;
 
     private ArrayList<CambioEstado> cambioEstado;
-    private ArrayList<SerieTemporal> serieTemporal;
+    private List<SerieTemporal> serieTemporal;
 
     //Atributos propios
     private LocalDateTime fechaHoraFin;
@@ -83,11 +84,11 @@ public class EventoSismico {
         this.cambioEstado = cambioEstado;
     }
 
-    public ArrayList<SerieTemporal> getSerieTemporal() {
+    public List<SerieTemporal> getSerieTemporal() {
         return serieTemporal;
     }
 
-    public void setSerieTemporal(ArrayList<SerieTemporal> serieTemporal) {
+    public void setSerieTemporal(List<SerieTemporal> serieTemporal) {
         this.serieTemporal = serieTemporal;
     }
 

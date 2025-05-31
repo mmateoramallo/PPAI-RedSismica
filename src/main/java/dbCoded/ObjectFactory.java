@@ -5,6 +5,7 @@
 package dbCoded;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.example.modelos.*;
 
 /**
@@ -23,7 +24,7 @@ public class ObjectFactory {
         return clasificaciones;
     }
 
-    public ArrayList<Estado> generarEstados() {
+    public static ArrayList<Estado> generarEstados() {
         ArrayList<Estado> estadosHardcodeados = new ArrayList<>();
         estadosHardcodeados.add(new Estado("EventoSismico", "AutoDetectado"));
         estadosHardcodeados.add(new Estado("EventoSismico", "PendienteRevision"));
@@ -63,5 +64,46 @@ public class ObjectFactory {
         magnitudes.add(new MagnitudRichter("Sismo mayor", 7));
         return magnitudes;
     }
-}
 
+    public List<SerieTemporal> generarSeriesTemporalesParaEvento() {
+        List<SerieTemporal> seriesTemporales = new ArrayList<>();
+        List<Estado> estados = generarEstados();
+
+        // Crear tipos de datos con unidad y umbral
+        TipoDeDato tipoVelocidad = new TipoDeDato("Velocidad de onda", 150, "m/s");
+        TipoDeDato tipoFrecuencia = new TipoDeDato("Frecuencia de onda", 100, "Hz");
+        TipoDeDato tipoLongitud = new TipoDeDato("Longitud de onda", 500, "m");
+
+        for (int i = 0; i < 2; i++) { // 2 series por evento
+            ArrayList<MuestraSismica> muestras = new ArrayList<>();
+
+            for (int j = 0; j < 3; j++) { // 3 muestras por serie
+                ArrayList<DetalleMuestraSismica> detalles = new ArrayList<>();
+
+                detalles.add(new DetalleMuestraSismica(tipoVelocidad, 120 + j));
+                detalles.add(new DetalleMuestraSismica(tipoFrecuencia, 80 + j));
+                detalles.add(new DetalleMuestraSismica(tipoLongitud, 450 + j));
+
+                String fechaHoraMuestra = "2025-06-01T12:0" + j + ":00";
+                MuestraSismica muestra = new MuestraSismica(detalles, fechaHoraMuestra);
+
+                muestras.add(muestra);
+            }
+
+            Estado estado = estados.get(i % estados.size());
+
+            SerieTemporal serie = new SerieTemporal(
+                    muestras,
+                    "100Hz",
+                    "2025-06-01T12:10:00",
+                    "2025-06-01T12:00:00",
+                    i % 2 == 0 ? "Sin alarma" : "Alarma detectada",
+                    estado
+            );
+
+            seriesTemporales.add(serie);
+        }
+
+        return seriesTemporales;
+    }
+}

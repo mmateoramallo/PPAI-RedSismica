@@ -47,7 +47,8 @@ public class EventoGenerator {
             evento.setLatitudHipocentro(-25 - i);
             evento.setLongitudEpicentro(-65 - i);
             evento.setLongitudHipocentro(-66 - i);
-
+            
+            evento.setSerieTemporal(factory.generarSeriesTemporalesParaEvento());
             evento.setValorMagnitud(4 + random.nextInt(4));
             evento.setFechaHoraOcurrencia(LocalDateTime.now().minusMinutes(i * 5));
 
