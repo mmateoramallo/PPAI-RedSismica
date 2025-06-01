@@ -10,7 +10,7 @@ public class CambioEstado {
 
     private Estado estado;
 
-    private MotivoFueraServicio motivoFueraServicio;
+    /*private MotivoFueraServicio motivoFueraServicio;
 
     public MotivoFueraServicio getMotivoFueraServicio() {
         return motivoFueraServicio;
@@ -18,7 +18,7 @@ public class CambioEstado {
 
     public void setMotivoFueraServicio(MotivoFueraServicio motivoFueraServicio) {
         this.motivoFueraServicio = motivoFueraServicio;
-    }
+    }*/
 
     public LocalDateTime getFechaHoraInicio() {
         return fechaHoraInicio;

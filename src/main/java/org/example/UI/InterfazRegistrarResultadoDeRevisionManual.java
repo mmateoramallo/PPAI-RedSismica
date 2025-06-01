@@ -73,13 +73,33 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
     }
 
     private void mostrarDetalle(EventoSismico evento) {
+
+        int opcion = JOptionPane.showConfirmDialog(
+                this,
+                "¿Desea cambiar el estado del evento a 'BloqueadoEnRevision'?",
+                "Confirmación de Estado",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        boolean actualizado = gestor.cambiarEstadoEvento(evento, "BloqueadoEnRevision");
+        if (!actualizado) {
+            JOptionPane.showMessageDialog(this, "No se pudo cambiar a 'BloqueadoEnRevision'");
+            return;
+        }
+        gestor.cargarDatosCompletosEvento(evento);
+
         JDialog dialog = new JDialog(this, "Detalle del Evento", true);
-        dialog.setSize(400, 400);
+        dialog.setSize(900, 600);
         dialog.setLayout(new BorderLayout());
 
-        JTextArea detalle = new JTextArea();
-        detalle.setEditable(false);
-        detalle.setText(
+        // Panel izquierdo
+        JTextArea panelIzquierdo = new JTextArea();
+        panelIzquierdo.setEditable(false);
+        panelIzquierdo.setText(
                 "Fecha/Hora: " + evento.getFechaHoraOcurrencia() + "\n"
                 + "Latitud Epicentro: " + evento.getLatitudEpicentro() + "\n"
                 + "Longitud Epicentro: " + evento.getLongitudEpicentro() + "\n"
@@ -90,46 +110,130 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
                 + "Estado Actual: " + evento.getEstado().getNombreEstado()
         );
 
-        JPanel botones = new JPanel();
-        JButton btnCambiarEstado = new JButton("Cambiar Estado");
-
-        btnCambiarEstado.addActionListener(e -> {
-            List<Estado> posiblesEstados = gestor.getEstadosPosibles();
-            String[] nombres = posiblesEstados.stream()
-                    .map(Estado::getNombreEstado)
-                    .toArray(String[]::new);
-
-            String nuevo = (String) JOptionPane.showInputDialog(
-                    dialog,
-                    "Seleccione el nuevo estado:",
-                    "Cambiar Estado",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    nombres,
-                    evento.getEstado().getNombreEstado()
-            );
-
-            if (nuevo != null && !nuevo.isEmpty()) {
-                boolean actualizado = gestor.cambiarEstadoEvento(evento, nuevo);
-                if (actualizado) {
-                    JOptionPane.showMessageDialog(dialog, "Estado actualizado correctamente a: " + nuevo);
-                    cargarEventos();
-                    dialog.dispose();
-                } else {
-                    JOptionPane.showMessageDialog(dialog, "El estado seleccionado no es válido.");
+        // Panel derecho
+        JTextArea panelDerecho = new JTextArea();
+        panelDerecho.setEditable(false);
+        StringBuilder sb = new StringBuilder();
+        for (SerieTemporal serie : evento.getSerieTemporal()) {
+            sb.append("[Serie] Condición: ").append(serie.getCondicionAlarma()).append("\n");
+            sb.append("Inicio: ").append(serie.getFechaHoraInicioRegistroMuestras()).append(" - Fin: ").append(serie.getFechaHoraRegistro()).append("\n");
+            sb.append("Frecuencia: ").append(serie.getFrecuenciaMuestreo()).append("\n");
+            for (MuestraSismica muestra : serie.getMuestrasSismicas()) {
+                sb.append("  [Muestra] Hora: ").append(muestra.getFechaHoraMuestra()).append("\n");
+                for (DetalleMuestraSismica d : muestra.getDetalleMuestraSismica()) {
+                    sb.append("    ").append(d.getTipoDeDato().getDenominacion()).append(": ")
+                            .append(d.getValor()).append(" ")
+                            .append(d.getTipoDeDato().getNombreUnidadMedida()).append("\n");
                 }
+            }
+            sb.append("-----------------------------\n");
+        }
+        panelDerecho.setText(sb.toString());
+
+        JPanel panelContenido = new JPanel(new GridLayout(1, 2));
+        panelContenido.add(new JScrollPane(panelIzquierdo));
+        panelContenido.add(new JScrollPane(panelDerecho));
+
+        JPanel panelBotones = new JPanel();
+        JButton btnVolver = new JButton("Volver");
+        JButton btnSismograma = new JButton("Generar Sismograma");
+        JButton btnMapa = new JButton("Visualizar Mapa");
+
+        JButton btnModificar = new JButton("Modificar Datos del Evento");
+        btnModificar.addActionListener(e -> mostrarFormularioEdicion(dialog, evento));
+        panelBotones.add(btnModificar);
+
+        btnVolver.addActionListener(e -> {
+            cargarEventos();
+            dialog.dispose();
+        });
+
+        btnSismograma.addActionListener(e -> JOptionPane.showMessageDialog(
+                dialog, "Sismograma generado con éxito", "Confirmación", JOptionPane.INFORMATION_MESSAGE));
+
+        btnMapa.addActionListener(e -> JOptionPane.showMessageDialog(
+                dialog, "(Simulación) Mapa visualizado con éxito", "Mapa", JOptionPane.INFORMATION_MESSAGE));
+        String[] opciones = {"Confirmar evento", "Rechazar evento", "Solicitar revisión a experto"};
+        JComboBox<String> comboAccion = new JComboBox<>(opciones);
+        JButton btnAceptarAccion = new JButton("Aceptar Acción");
+
+        btnAceptarAccion.addActionListener(e -> {
+            String seleccion = (String) comboAccion.getSelectedItem();
+            boolean ok = gestor.confirmarAccionEvento(evento, seleccion);
+            if (ok) {
+                JOptionPane.showMessageDialog(dialog, "Evento actualizado correctamente como: " + seleccion);
+                cargarEventos();
+                dialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Faltan datos obligatorios (magnitud, alcance u origen).");
             }
         });
 
-        botones.add(btnCambiarEstado);
+        panelBotones.add(comboAccion);
+        panelBotones.add(btnAceptarAccion);
 
-        dialog.add(new JScrollPane(detalle), BorderLayout.CENTER);
-        dialog.add(botones, BorderLayout.SOUTH);
+        panelBotones.add(btnVolver);
+        panelBotones.add(btnSismograma);
+        panelBotones.add(btnMapa);
+
+        dialog.add(panelContenido, BorderLayout.CENTER);
+        dialog.add(panelBotones, BorderLayout.SOUTH);
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
+
+        cargarEventos();
+    }
+
+    private void mostrarFormularioEdicion(JDialog parentDialog, EventoSismico evento) {
+        JDialog formDialog = new JDialog(this, "Editar Datos del Evento", true);
+        formDialog.setSize(400, 300);
+        formDialog.setLayout(new GridLayout(5, 2));
+
+        List<AlcanceSismo> alcances = gestor.getAlcances();
+        List<OrigenDeGeneracion> origenes = gestor.getOrigenes();
+        List<MagnitudRichter> magnitudes = gestor.getMagnitudes();
+
+        JComboBox<String> cbAlcance = new JComboBox<>(alcances.stream().map(AlcanceSismo::getNombre).toArray(String[]::new));
+        JComboBox<String> cbOrigen = new JComboBox<>(origenes.stream().map(OrigenDeGeneracion::getNombre).toArray(String[]::new));
+        JComboBox<String> cbMagnitud = new JComboBox<>(magnitudes.stream().map(MagnitudRichter::getDescripcionMagnitud).toArray(String[]::new));
+
+        cbAlcance.setSelectedItem(evento.getAlcanceSismo().getNombre());
+        cbOrigen.setSelectedItem(evento.getOrigenGeneracion().getNombre());
+        cbMagnitud.setSelectedItem(evento.getMagnitud().getDescripcionMagnitud());
+
+        JButton btnGuardar = new JButton("Guardar");
+        JButton btnCancelar = new JButton("Cancelar");
+
+        btnGuardar.addActionListener(e -> {
+            AlcanceSismo nuevoAlcance = alcances.get(cbAlcance.getSelectedIndex());
+            OrigenDeGeneracion nuevoOrigen = origenes.get(cbOrigen.getSelectedIndex());
+            MagnitudRichter nuevaMagnitud = magnitudes.get(cbMagnitud.getSelectedIndex());
+
+            gestor.actualizarDatosEvento(evento, nuevoAlcance, nuevoOrigen, nuevaMagnitud);
+
+            JOptionPane.showMessageDialog(formDialog, "Datos actualizados correctamente.");
+            formDialog.dispose();
+            parentDialog.dispose();
+            mostrarDetalle(evento); // refresca datos actualizados
+        });
+
+        btnCancelar.addActionListener(e -> formDialog.dispose());
+
+        formDialog.add(new JLabel("Alcance:"));
+        formDialog.add(cbAlcance);
+        formDialog.add(new JLabel("Origen:"));
+        formDialog.add(cbOrigen);
+        formDialog.add(new JLabel("Magnitud:"));
+        formDialog.add(cbMagnitud);
+        formDialog.add(btnCancelar);
+        formDialog.add(btnGuardar);
+
+        formDialog.setLocationRelativeTo(this);
+        formDialog.setVisible(true);
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new InterfazRegistrarResultadoDeRevisionManual().setVisible(true));
     }
+
 }

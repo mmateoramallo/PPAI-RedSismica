@@ -13,7 +13,7 @@ public class EventoSismico {
     private AlcanceSismo alcanceSismo; //
     private Estado estado; //
     
-    private Empleado analistaSupervisor;
+    //private Empleado analistaSupervisor;
 
     private ArrayList<CambioEstado> cambioEstado;
     private List<SerieTemporal> serieTemporal;
@@ -68,13 +68,13 @@ public class EventoSismico {
         this.estado = estado;
     }
 
-    public Empleado getAnalistaSupervisor() {
-        return analistaSupervisor;
-    }
+    //public Empleado getAnalistaSupervisor() {
+    //    return analistaSupervisor;
+    //}
 
-    public void setAnalistaSupervisor(Empleado analistaSupervisor) {
-        this.analistaSupervisor = analistaSupervisor;
-    }
+    //public void setAnalistaSupervisor(Empleado analistaSupervisor) {
+     //   this.analistaSupervisor = analistaSupervisor;
+    //}
 
     public ArrayList<CambioEstado> getCambioEstado() {
         return cambioEstado;
@@ -159,7 +159,6 @@ public String toString() {
            "  origenGeneracion: " + origenGeneracion + ",\n" +
            "  alcanceSismo: " + alcanceSismo + ",\n" +
            "  estado: " + estado + ",\n" +
-           "  analistaSupervisor: " + analistaSupervisor + ",\n" +
            "  cambioEstado: " + cambioEstado + ",\n" +
            "  serieTemporal: " + serieTemporal + ",\n" +
            "  fechaHoraFin: " + fechaHoraFin + ",\n" +
