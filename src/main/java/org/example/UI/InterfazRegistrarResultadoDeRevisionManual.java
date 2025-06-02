@@ -25,7 +25,12 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         initComponents();
         cargarEventos();
     }
-
+    
+    public void habilitarVentana(JFrame ventana){
+        ventana.setVisible(true);
+    }
+    
+    
     private void initComponents() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(800, 600);
@@ -232,8 +237,10 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         formDialog.setVisible(true);
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new InterfazRegistrarResultadoDeRevisionManual().setVisible(true));
-    }
+    }*/
+    
+    
 
 }

@@ -44,7 +44,7 @@ public class GestorRegistrarResultadoDeRevisionManual {
         }
         return false;
     }
-
+    
     public void cargarDatosCompletosEvento(EventoSismico evento) {
         evento.setSerieTemporal(baseHardcodeada.generarSeriesTemporalesParaEvento());
     }

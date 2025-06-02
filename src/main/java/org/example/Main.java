@@ -1,16 +1,27 @@
 package org.example;
 
+import org.example.UI.InterfazPrincipal;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import javafx.scene.Parent;
-
-
+import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
-        // Puedes inicializar aquí el gestor y pasarle dependencias si es necesario
+        // Configurar el Look & Feel (opcional)
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception ex) {
+            // Si Nimbus no está disponible, se ignora y se usa el Look & Feel por defecto
+        }
+
+        // Arrancar la Interfaz Principal en el hilo de eventos de Swing
+        SwingUtilities.invokeLater(() -> {
+            InterfazPrincipal ventana = new InterfazPrincipal();
+            ventana.setVisible(true);
+        });
     }
 }
