@@ -10,15 +10,6 @@ public class CambioEstado {
 
     private Estado estado;
 
-    /*private MotivoFueraServicio motivoFueraServicio;
-
-    public MotivoFueraServicio getMotivoFueraServicio() {
-        return motivoFueraServicio;
-    }
-
-    public void setMotivoFueraServicio(MotivoFueraServicio motivoFueraServicio) {
-        this.motivoFueraServicio = motivoFueraServicio;
-    }*/
 
     public LocalDateTime getFechaHoraInicio() {
         return fechaHoraInicio;
@@ -50,9 +41,9 @@ public class CambioEstado {
     @Override
     public String toString() {
         return "CambioEstado{" +
-                "fechaHoraInicio=" + fechaHoraInicio +
-                ", fechaHoraFin=" + fechaHoraFin +
-                ", estado=" + estado +
-                '}';
+               "fechaHoraInicio=" + fechaHoraInicio +
+               ", fechaHoraFin=" + fechaHoraFin +
+               ", estado=" + (estado != null ? estado.getNombreEstado() : "null") +
+               '}';
     }
 }

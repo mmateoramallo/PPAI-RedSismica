@@ -17,7 +17,7 @@ public class InterfazPrincipal extends javax.swing.JFrame {
     public InterfazPrincipal() {
         initComponents();
          setTitle("Red Sísmica");
-         jPanel1.setBackground(Color.RED); //Color de mi panel
+         jPanel1.setBackground(Color.GRAY); //Color de mi panel
          ImageIcon icon = new ImageIcon(getClass().getResource("/logo.png"));
          setIconImage(icon.getImage());
                
@@ -39,7 +39,7 @@ public class InterfazPrincipal extends javax.swing.JFrame {
         jButton1.setText("Registrar resultado de revisión manual ");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                seleccionarOpcionRegistrarRevManual(evt);
             }
         });
         jPanel1.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(292, 279, -1, -1));
@@ -48,8 +48,12 @@ public class InterfazPrincipal extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+    
+    
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    
+    
+    private void seleccionarOpcionRegistrarRevManual(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
         //Aca iria el habilitar Ventana para la ventana de revision manual
         // Al hacer clic, abrimos la ventana de registrar resultados de revisión manual

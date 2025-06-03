@@ -36,7 +36,7 @@ public class EventoSismico {
         this.clasificacion = clasificacion;
     }
 
-    public MagnitudRichter getMagnitud() {
+    public MagnitudRichter tomarMagnitud() {
         return magnitud;
     }
 
@@ -100,7 +100,7 @@ public class EventoSismico {
         this.fechaHoraFin = fechaHoraFin;
     }
 
-    public LocalDateTime getFechaHoraOcurrencia() {
+    public LocalDateTime tomarFechaHoraOcurrencia() {
         return fechaHoraOcurrencia;
     }
 
@@ -108,7 +108,7 @@ public class EventoSismico {
         this.fechaHoraOcurrencia = fechaHoraOcurrencia;
     }
 
-    public Integer getLatitudEpicentro() {
+    public Integer tomarLatitudEpicentro() {
         return latitudEpicentro;
     }
 
@@ -116,7 +116,7 @@ public class EventoSismico {
         this.latitudEpicentro = latitudEpicentro;
     }
 
-    public Integer getLatitudHipocentro() {
+    public Integer tomartLatitudHipocentro() {
         return latitudHipocentro;
     }
 
@@ -124,7 +124,7 @@ public class EventoSismico {
         this.latitudHipocentro = latitudHipocentro;
     }
 
-    public Integer getLongitudEpicentro() {
+    public Integer tomarLongitudEpicentro() {
         return longitudEpicentro;
     }
 
@@ -132,7 +132,7 @@ public class EventoSismico {
         this.longitudEpicentro = longitudEpicentro;
     }
 
-    public Integer getLongitudHipocentro() {
+    public Integer tomarLongitudHipocentro() {
         return longitudHipocentro;
     }
 
@@ -150,6 +150,14 @@ public class EventoSismico {
 
     public EventoSismico() {
     }
+    
+    //Metodos creados para trazabilidad 1-1
+    public boolean sosAutoDetectado() {
+        return this.estado != null && this.estado.getNombreEstado().equals("AutoDetectado");
+    }
+    
+    
+    
 
 @Override
 public String toString() {
@@ -170,6 +178,10 @@ public String toString() {
            "  valorMagnitud: " + valorMagnitud + "\n" +
            '}';
 }
+
+    public void setResponsableRevision(Analista analista) {
+        throw new UnsupportedOperationException("Not supported yet."); 
+    }
 
     
     
