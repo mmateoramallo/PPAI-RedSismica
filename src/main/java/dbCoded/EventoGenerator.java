@@ -74,11 +74,11 @@ public class EventoGenerator {
         return eventos;
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         EventoGenerator generador = new EventoGenerator();
         List<EventoSismico> eventos = generador.generarEventosCompletos();
         for (EventoSismico e : eventos) {
             System.out.println(e);
         }
-    }
+    }*/
 }

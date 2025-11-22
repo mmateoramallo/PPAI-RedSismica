@@ -7,11 +7,11 @@ import java.util.List;
 public class EventoSismico {
 
     //Atributos relacionales
-    private ClasificacionSismo clasificacion; //
-    private MagnitudRichter magnitud; //
-    private OrigenDeGeneracion origenGeneracion; //
-    private AlcanceSismo alcanceSismo; //
-    private Estado estado; //
+    private ClasificacionSismo clasificacion; 
+    private MagnitudRichter magnitud; 
+    private OrigenDeGeneracion origenGeneracion; 
+    private AlcanceSismo alcanceSismo; 
+    private Estado estado; 
     
     //private Empleado analistaSupervisor;
 
@@ -151,7 +151,6 @@ public class EventoSismico {
     public EventoSismico() {
     }
     
-    //Metodos creados para trazabilidad 1-1
     public boolean sosAutoDetectado() {
         return this.estado != null && this.estado.getNombreEstado().equals("AutoDetectado");
     }
