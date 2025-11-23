@@ -24,40 +24,82 @@ public class EventoGenerator {
         // Encontramos el objeto Estado “AutoDetectado” en la lista
         Estado estadoAutodetectado = null;
         for (Estado e : estados) {
+            // Asegúrate que el string coincida con lo que tengas en ObjectFactory
             if (e.getNombreEstado().equals("AutoDetectado")) {
                 estadoAutodetectado = e;
                 break;
             }
         }
+        
+        // Validación por seguridad para que no explote si no lo encuentra
+        if (estadoAutodetectado == null) {
+            estadoAutodetectado = new Estado("Sistema", "AutoDetectado");
+        }
 
-        // 1) Generar primero 5 eventos con estado AutoDetectado
+        // ---------------------------------------------------------
+        // 1) Generar primeros 5 eventos con estado AutoDetectado
+        // ---------------------------------------------------------
         for (int i = 1; i <= 5; i++) {
             EventoSismico evento = new EventoSismico();
-            // Asignar clasificación aleatoria
+            
+            // 1. Definimos fecha PRIMERO para usarla en el historial
+            LocalDateTime fechaOcurrencia = LocalDateTime.now().minusMinutes(i * 5L);
+            evento.setFechaHoraOcurrencia(fechaOcurrencia);
+
+            // 2. Asignar clasificación aleatoria
             evento.setClasificacion(clasificaciones.get(random.nextInt(clasificaciones.size())));
-            // Fijamos AutoDetectado
+
+            // 3. SETEAR ESTADO + HISTORIAL (Lo crucial que faltaba)
+            // Seteamos el puntero actual
             evento.setEstado(estadoAutodetectado);
-            // Asignamos aleatoriamente alcance, origen y magnitud
+            
+            // Simulamos que la DB trajo el historial: Creamos el CambioEstado inicial
+            // Usamos el constructor nuevo que hicimos en el paso anterior: (Estado, Fecha)
+            CambioEstado cambioInicial = new CambioEstado(estadoAutodetectado, fechaOcurrencia);
+            
+            // Lo agregamos a la lista del evento
+            evento.getCambioEstado().add(cambioInicial);
+
+            // 4. Asignamos resto de datos
             evento.setAlcanceSismo(alcances.get(random.nextInt(alcances.size())));
             evento.setOrigenGeneracion(origenes.get(random.nextInt(origenes.size())));
             evento.setMagnitud(magnitudes.get(random.nextInt(magnitudes.size())));
-            // Coordenadas y otros datos
+            
             evento.setLatitudEpicentro(-24 - i);
             evento.setLatitudHipocentro(-25 - i);
             evento.setLongitudEpicentro(-65 - i);
             evento.setLongitudHipocentro(-66 - i);
             evento.setSerieTemporal(factory.generarSeriesTemporalesParaEvento());
             evento.setValorMagnitud(4 + random.nextInt(4));
-            evento.setFechaHoraOcurrencia(LocalDateTime.now().minusMinutes(i * 5L));
+            
             eventos.add(evento);
         }
 
-        // 2) Generar los otros 10 eventos con estado cualquiera (incluida la posibilidad de repetir AutoDetectado)
+        // ---------------------------------------------------------
+        // 2) Generar otros 10 eventos con estado aleatorio
+        // ---------------------------------------------------------
         for (int i = 6; i <= 15; i++) {
             EventoSismico evento = new EventoSismico();
+            
+            // Fecha
+            LocalDateTime fechaOcurrencia = LocalDateTime.now().minusMinutes(i * 5L);
+            evento.setFechaHoraOcurrencia(fechaOcurrencia);
+
             evento.setClasificacion(clasificaciones.get(random.nextInt(clasificaciones.size())));
-            // Estado aleatorio (puede salir AutoDetectado o cualquiera de la lista)
-            evento.setEstado(estados.get(random.nextInt(estados.size())));
+            
+            // Estado aleatorio
+            Estado estadoRandom = estados.get(random.nextInt(estados.size()));
+            evento.setEstado(estadoRandom);
+
+            // IMPORTANTE: Crear el historial para este estado random también
+            CambioEstado cambioRandom = new CambioEstado(estadoRandom, fechaOcurrencia);
+            
+            // Si el estado NO es el inicial (ej. es "Confirmado"), en una DB real habría
+            // un historial previo (ej: AutoDetectado -> Confirmado).
+            // Para simplificar la simulación, asumimos que este es el estado actual vigente.
+            evento.getCambioEstado().add(cambioRandom);
+
+            // Resto de datos
             evento.setAlcanceSismo(alcances.get(random.nextInt(alcances.size())));
             evento.setOrigenGeneracion(origenes.get(random.nextInt(origenes.size())));
             evento.setMagnitud(magnitudes.get(random.nextInt(magnitudes.size())));
@@ -67,18 +109,10 @@ public class EventoGenerator {
             evento.setLongitudHipocentro(-66 - i);
             evento.setSerieTemporal(factory.generarSeriesTemporalesParaEvento());
             evento.setValorMagnitud(4 + random.nextInt(4));
-            evento.setFechaHoraOcurrencia(LocalDateTime.now().minusMinutes(i * 5L));
+            
             eventos.add(evento);
         }
 
         return eventos;
     }
-
-    /*public static void main(String[] args) {
-        EventoGenerator generador = new EventoGenerator();
-        List<EventoSismico> eventos = generador.generarEventosCompletos();
-        for (EventoSismico e : eventos) {
-            System.out.println(e);
-        }
-    }*/
 }

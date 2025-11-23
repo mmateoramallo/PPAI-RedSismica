@@ -77,7 +77,6 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
                         // 1) Llamo al gestor para que registre que aún no se eligió nada
                         gestor.pedirSeleccionEvento();
 
-                        // 2) Si aún no mostramos la alerta, la mostramos y marcamos bandera
                         if (!yaPidioSeleccion) {
                             yaPidioSeleccion = true;
                             JOptionPane.showMessageDialog(

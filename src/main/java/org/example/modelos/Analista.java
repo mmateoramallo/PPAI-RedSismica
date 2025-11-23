@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package org.example.modelos;
 
 /**
@@ -48,6 +44,18 @@ public class Analista {
     }
 
     public Analista() {
+    }
+    
+    public Analista(String nombre, String apellido, String mail, String telefono) {
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.mail = mail;
+        this.telefono = telefono;
+    }
+
+    @Override
+    public String toString() {
+        return "Analista{" + "apellido=" + apellido + ", nombre=" + nombre + ", mail=" + mail + ", telefono=" + telefono + '}';
     }
     
     
