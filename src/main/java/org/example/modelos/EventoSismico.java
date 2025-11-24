@@ -45,8 +45,6 @@ public class EventoSismico {
     
     
     public EventoSismico() {
-        // Testing mientras previo al BD
-        // this.setEstadoActual(new AutoDetectado());
     }
 
     public LocalDateTime getFechaHoraOcurrencia() {
@@ -194,6 +192,9 @@ public class EventoSismico {
     public void rechazarEvento(LocalDateTime fechaHoraActual, Analista responsableLogueado) {
 
         this.estado.rechazarEvento(this, fechaHoraActual, responsableLogueado);
+        /*To-Do: El estado 'BloqueadoEnRevision' creará el 'new Rechazado()',
+        llamará a setEstadoActual(nuevo) y registrará el CambioEstado en la lista histórica.
+         Al volver aquí, 'this.estadoActual' ya será una instancia de Rechazado.*/
     }
 
     public void confirmarEvento(LocalDateTime fechaHoraActual, Analista responsableLogueado) {

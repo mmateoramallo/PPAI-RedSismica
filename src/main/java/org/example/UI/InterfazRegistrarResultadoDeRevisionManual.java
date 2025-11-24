@@ -4,7 +4,11 @@ import org.example.gestor.GestorRegistrarResultadoDeRevisionManual;
 import org.example.modelos.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -13,28 +17,39 @@ import java.util.List;
 
 public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
 
+    // --- Paleta de Colores "Dark Modern" Refinada ---
+    private static final Color BG_DARK = new Color(18, 18, 18);
+    private static final Color BG_SURFACE = new Color(30, 30, 30);
+    private static final Color BG_HEADER_TABLE = new Color(45, 45, 45);
+    
+    private static final Color TEXT_PRIMARY = new Color(240, 240, 240);
+    private static final Color TEXT_SECONDARY = new Color(160, 160, 160);
+    
+    // Colores de Acción
+    private static final Color BTN_BLUE = new Color(64, 158, 255);
+    private static final Color BTN_GREEN = new Color(103, 194, 58);
+    private static final Color BTN_RED = new Color(245, 108, 108);
+    private static final Color BTN_DEFAULT = new Color(70, 70, 70);
+
+    // Tipografía base (Intenta usar Roboto, sino usa la por defecto del sistema)
+    private static final Font FONT_MAIN = new Font("Roboto", Font.PLAIN, 14);
+    private static final Font FONT_BOLD = new Font("Roboto", Font.BOLD, 14);
+    private static final Font FONT_TITLE = new Font("Roboto", Font.BOLD, 22);
+
     private JTable tablaEventos;
     private DefaultTableModel modeloTabla;
     private JPanel panelPrincipal;
-
-    /**
-     * Aquí guardamos la misma lista de objetos originales que devuelve el
-     * gestor
-     */
     private List<EventoSismico> eventos;
-
+    
     private final GestorRegistrarResultadoDeRevisionManual gestor;
-
-    private static final DateTimeFormatter FORMATO_FECHA
-            = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private boolean yaPidioSeleccion = false;
 
     public InterfazRegistrarResultadoDeRevisionManual() {
-        super("Registrar Resultado de Revisión Manual");
+        super("Red Sísmica - Dashboard de Revisión");
         this.gestor = new GestorRegistrarResultadoDeRevisionManual();
 
-        // Paso 5/6 del diagrama: desencadenar nueva revisión
+        // Diagrama: Paso inicial
         gestor.nuevaRevision();
 
         initComponents();
@@ -47,375 +62,453 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
 
     private void initComponents() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(800, 600);
+        setSize(1100, 650);
         setLocationRelativeTo(null);
+        getContentPane().setBackground(BG_DARK);
 
         panelPrincipal = new JPanel(new BorderLayout());
+        panelPrincipal.setBackground(BG_DARK);
+        panelPrincipal.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        modeloTabla = new DefaultTableModel(
-                new String[]{"Id evneto","Fecha/Hora", "Latitud", "Longitud", "Magnitud", "Estado"},
-                0
-        ) {
+        // 1. Header
+        JPanel headerPanel = new JPanel(new GridLayout(2, 1, 0, 5));
+        headerPanel.setBackground(BG_DARK);
+        
+        JLabel lblTitulo = new JLabel("Registrar Resultado de Revisión Manual");
+        lblTitulo.setFont(FONT_TITLE);
+        lblTitulo.setForeground(TEXT_PRIMARY);
+        
+        JLabel lblSub = new JLabel("Eventos sísmicos detectados automáticamente pendientes de revisión");
+        lblSub.setFont(FONT_MAIN);
+        lblSub.setForeground(TEXT_SECONDARY);
+        
+        headerPanel.add(lblTitulo);
+        headerPanel.add(lblSub);
+        panelPrincipal.add(headerPanel, BorderLayout.NORTH);
+
+        // 2. Tabla Estilizada
+        String[] columnas = {"ID", "Fecha/Hora", "Latitud", "Longitud", "Magnitud", "Estado"};
+        modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
 
         tablaEventos = new JTable(modeloTabla);
-        JScrollPane scrollPane = new JScrollPane(tablaEventos);
+        configurarTabla(tablaEventos);
 
+        JScrollPane scrollPane = new JScrollPane(tablaEventos);
+        scrollPane.getViewport().setBackground(BG_DARK);
+        scrollPane.setBorder(BorderFactory.createLineBorder(BG_SURFACE));
+        
+        // Listener de Selección
         tablaEventos.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Solo actuamos si es doble‐clic; si no, ni intentamos nada
                 if (e.getClickCount() == 2) {
-                    int fila = tablaEventos.getSelectedRow();
-
-                    // ----- Si no hay fila seleccionada, “pedirSelección” -----
-                    if (fila < 0) {
-                        // 1) Llamo al gestor para que registre que aún no se eligió nada
-                        gestor.pedirSeleccionEvento();
-
-                        if (!yaPidioSeleccion) {
-                            yaPidioSeleccion = true;
-                            JOptionPane.showMessageDialog(
-                                    InterfazRegistrarResultadoDeRevisionManual.this,
-                                    "Por favor seleccione un registro de la tabla primero.",
-                                    "Seleccione un evento",
-                                    JOptionPane.WARNING_MESSAGE
-                            );
-                        }
-                        return;
-                    }
-
-                    // ----- Si hay fila, recupero el EventoSismico original y lo paso al gestor -----
-                    EventoSismico seleccionado = eventos.get(fila);
-                    gestor.tomarEventoSeleccionado(seleccionado);
-
-                    // Ahora mostramos el detalle (bloquearlo en revisión, etc.)
-                    mostrarDetalle(seleccionado);
+                    procesarSeleccion();
                 }
             }
         });
 
-        panelPrincipal.add(scrollPane, BorderLayout.CENTER);
+        JPanel tableContainer = new JPanel(new BorderLayout());
+        tableContainer.setBackground(BG_DARK);
+        tableContainer.setBorder(new EmptyBorder(20, 0, 0, 0));
+        tableContainer.add(scrollPane, BorderLayout.CENTER);
+
+        panelPrincipal.add(tableContainer, BorderLayout.CENTER);
         add(panelPrincipal);
     }
 
-    private void cargarEventos() {
-        // 1) Limpiar la tabla
-        modeloTabla.setRowCount(0);
+    // --- Configuración Visual de la Tabla ---
+    private void configurarTabla(JTable table) {
+        table.setBackground(BG_DARK);
+        table.setForeground(TEXT_PRIMARY);
+        table.setRowHeight(45); // Filas más altas
+        table.setSelectionBackground(new Color(55, 55, 60));
+        table.setSelectionForeground(TEXT_PRIMARY);
+        table.setShowVerticalLines(false);
+        table.setGridColor(BG_SURFACE);
+        table.setFont(FONT_MAIN);
+        table.setFillsViewportHeight(true);
 
-        // 2) Pedir al Gestor la lista “original” filtrada (ya no usamos copias ligeras)
-        eventos = gestor.buscarEventoNoDet();
+        JTableHeader header = table.getTableHeader();
+        header.setBackground(BG_HEADER_TABLE);
+        header.setForeground(TEXT_SECONDARY);
+        header.setFont(FONT_BOLD);
+        header.setBorder(BorderFactory.createEmptyBorder());
+        header.setPreferredSize(new Dimension(0, 40));
 
-        // 3) Mostrar cada uno en la tabla
-        for (EventoSismico ev : eventos) {
-            mostrarDatosPrincipalesEvento(ev);
+        // Renderizado centrado genérico
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            if (i != 5) table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
-        // 4) Programar un Timer de 5 segundos para forzar la selección (solo una vez)
+        // Renderizado "Pill" para Estado (Columna 5)
+        table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                label.setOpaque(false); // Importante para que se vea el "pill" pintado abajo
+                return new PillLabel((String) value);
+            }
+        });
+    }
+
+    // Clase auxiliar para dibujar el "Pill" (Etiqueta redondeada de estado)
+    private static class PillLabel extends JLabel {
+        private final Color colorBorde;
+        public PillLabel(String estado) {
+            super(estado);
+            setHorizontalAlignment(CENTER);
+            setForeground(TEXT_PRIMARY);
+            setFont(new Font("Roboto", Font.BOLD, 12));
+            
+            if ("AutoDetectado".equals(estado)) this.colorBorde = BTN_BLUE;
+            else if ("Confirmado".equals(estado)) this.colorBorde = BTN_GREEN;
+            else if ("Rechazado".equals(estado)) this.colorBorde = BTN_RED;
+            else this.colorBorde = TEXT_SECONDARY;
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(BG_DARK); // Fondo base
+            g2.fillRect(0,0,getWidth(),getHeight());
+            
+            // Dibujar Pill
+            g2.setColor(new Color(colorBorde.getRed(), colorBorde.getGreen(), colorBorde.getBlue(), 40)); // Fondo transparente
+            g2.fillRoundRect(10, 8, getWidth()-20, getHeight()-16, 20, 20);
+            
+            g2.setColor(colorBorde);
+            g2.setStroke(new BasicStroke(1));
+            g2.drawRoundRect(10, 8, getWidth()-20, getHeight()-16, 20, 20);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    private void cargarEventos() {
+        modeloTabla.setRowCount(0);
+        eventos = gestor.buscarEventoNoDet();
+        for (EventoSismico ev : eventos) {
+            modeloTabla.addRow(new Object[]{
+                ev.getIdEvento(),
+                ev.tomarFechaHoraOcurrencia().format(FORMATO_FECHA),
+                ev.tomarLatitudEpicentro() + "°",
+                ev.tomarLongitudEpicentro() + "°",
+                ev.getValorMagnitud(),
+                ev.getEstado().getNombre()
+            });
+        }
+        
         Timer timerPedido = new Timer(5000, e -> {
             gestor.pedirSeleccionEvento();
-            JOptionPane.showMessageDialog(
-                    InterfazRegistrarResultadoDeRevisionManual.this,
-                    "Por favor seleccione un registro de la tabla para continuar.",
-                    "Seleccione un evento",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
+            // Solo aviso visual, no bloqueo
         });
         timerPedido.setRepeats(false);
         timerPedido.start();
     }
 
-    private void mostrarDatosPrincipalesEvento(EventoSismico ev) {
-        String fechaFormateada = ev.tomarFechaHoraOcurrencia().format(FORMATO_FECHA);
-
-        modeloTabla.addRow(new Object[]{
-            ev.getIdEvento(),
-            fechaFormateada,
-            ev.tomarLatitudEpicentro(),
-            ev.tomarLongitudEpicentro(),
-            ev.getValorMagnitud(),
-            ev.getEstado().getNombre()
-        });
+    private void procesarSeleccion() {
+        int fila = tablaEventos.getSelectedRow();
+        if (fila < 0) return;
+        EventoSismico seleccionado = eventos.get(fila);
+        gestor.tomarEventoSeleccionado(seleccionado);
+        mostrarDetalleDashboard(seleccionado);
     }
 
-    /**
-     * Muestra el diálogo de detalle de un evento. Aquí vamos a: 1) Inhabilitar
-     * inicialmente “Visualizar Mapa” 2) Habilitarlo solo después de presionar
-     * “Generar Sismograma” 3) Permitir que, si el usuario modifica datos y
-     * guarda, se actualicen las áreas de texto sin cerrar el diálogo
-     */
-    private void mostrarDetalle(EventoSismico evento) {
-        // 1) Confirmación “Bloquear en revisión”
-        int opcion = JOptionPane.showConfirmDialog(
-                this,
-                "¿Desea cambiar el estado del evento a 'BloqueadoEnRevision'?",
-                "Confirmación de Estado",
-                JOptionPane.YES_NO_OPTION
-        );
-        if (opcion != JOptionPane.YES_OPTION) {
-            return;
-        }
+    // ======================================================================================
+    //     NUEVO DETALLE (DASHBOARD STYLE)
+    // ======================================================================================
+    private void mostrarDetalleDashboard(EventoSismico evento) {
+        int opcion = JOptionPane.showConfirmDialog(this, 
+            "¿Desea revisar el evento #" + evento.getIdEvento() + "?",
+            "Confirmar Revisión", JOptionPane.YES_NO_OPTION);
+        
+        if (opcion != JOptionPane.YES_OPTION) return;
 
-        // 2) Invocar al gestor para bloquear exactamente este mismo objeto “evento”
         gestor.bloquearEventoSismico(evento);
 
-        // 3) A estas alturas, en “evento” ya cambiamos su estado y
-        //    registramos un CambioEstado; además, su magnitud, alcance,
-        //    clasificación, origen y series ya estaban en el objeto original.
-        // 4) Construir el diálogo que muestra todos los datos:
-        JDialog dialog = new JDialog(this, "Detalle del Evento", true);
-        dialog.setSize(900, 600);
+        JDialog dialog = new JDialog(this, "Detalles del Evento #" + evento.getIdEvento(), true);
+        dialog.setSize(950, 600);
+        dialog.setLocationRelativeTo(this);
+        dialog.getContentPane().setBackground(BG_DARK);
         dialog.setLayout(new BorderLayout());
 
-        // —— Panel IZQUIERDO (datos principales) —— 
-        // Lo declaramos como final para que podamos modificar su contenido desde el formulario de edición
-        final JTextArea panelIzquierdo = new JTextArea();
-        panelIzquierdo.setEditable(false);
+        // --- PESTAÑAS ---
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setBackground(BG_DARK);
+        tabs.setForeground(TEXT_PRIMARY);
+        tabs.setFont(FONT_MAIN);
+        
+        // Pestaña 1: Resumen Visual
+        JPanel panelResumen = crearPanelResumen(evento);
+        tabs.addTab("Resumen Visual", panelResumen);
 
-        // —— Panel DERECHO (series → muestras → detalle) —— 
-        final JTextArea panelDerecho = new JTextArea();
-        panelDerecho.setEditable(false);
+        // Pestaña 2: Datos Técnicos
+        JTextArea txtMuestras = new JTextArea();
+        txtMuestras.setEditable(false);
+        txtMuestras.setBackground(BG_SURFACE);
+        txtMuestras.setForeground(TEXT_SECONDARY);
+        txtMuestras.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        actualizarTextoMuestras(evento, txtMuestras);
+        
+        JScrollPane scrollRaw = new JScrollPane(txtMuestras);
+        scrollRaw.setBorder(null);
+        tabs.addTab("Datos Técnicos (Raw)", scrollRaw);
 
-        // Método que carga/recarga los textos de panelIzquierdo y panelDerecho
-        Runnable refrescarTextosDetalle = () -> {
-            // 4.1) Panel izquierdo
-            String fechaDetalle = evento.tomarFechaHoraOcurrencia().format(FORMATO_FECHA);
-            StringBuilder sbIzq = new StringBuilder();
-            sbIzq.append("Fecha/Hora: ").append(fechaDetalle).append("\n")
-                    .append("Latitud Epicentro: ").append(evento.tomarLatitudEpicentro()).append("\n")
-                    .append("Longitud Epicentro: ").append(evento.tomarLongitudEpicentro()).append("\n")
-                    .append("Magnitud: ").append(evento.tomarMagnitud().getDescripcionMagnitud()).append("\n")
-                    .append("Alcance: ").append(evento.getAlcanceSismo().getNombre()).append("\n")
-                    .append("Clasificación: ").append(evento.getClasificacion().getNombre()).append("\n")
-                    .append("Origen: ").append(evento.getOrigenGeneracion().getNombre()).append("\n")
-                    .append("Estado Actual: ").append(evento.getEstado().getNombre()).append("\n");
-            panelIzquierdo.setText(sbIzq.toString());
+        dialog.add(tabs, BorderLayout.CENTER);
 
-            // 4.2) Panel derecho (series → muestras → detalle, incluyendo estación)
-            StringBuilder sbDer = new StringBuilder();
-            for (SerieTemporal serie : evento.getSerieTemporal()) {
-                String nombreEstacion = serie.getEstacionSismica().getNombre();
-                sbDer.append("[Serie en estación: ").append(nombreEstacion).append("]\n")
-                        .append("   Condición: ").append(serie.getCondicionAlarma()).append("\n")
-                        .append("   Inicio registro: ").append(serie.getFechaHoraInicioRegistroMuestras()).append("\n")
-                        .append("   Fin registro: ").append(serie.getFechaHoraRegistro()).append("\n")
-                        .append("   Frecuencia: ").append(serie.getFrecuenciaMuestreo()).append("\n");
-                for (MuestraSismica muestra : serie.getMuestrasSismicas()) {
-                    sbDer.append("     [Muestra] Hora: ").append(muestra.getFechaHoraMuestra()).append("\n");
-                    for (DetalleMuestraSismica d : muestra.getDetalleMuestraSismica()) {
-                        sbDer.append("        - ")
-                                .append(d.getTipoDeDato().getDenominacion())
-                                .append(": ").append(d.getValor())
-                                .append(" ").append(d.getTipoDeDato().getNombreUnidadMedida())
-                                .append("\n");
-                    }
-                }
-                sbDer.append("-----------------------------\n");
-            }
-            panelDerecho.setText(sbDer.toString());
-        };
+        // --- BOTONERA INFERIOR ---
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
+        actionPanel.setBackground(BG_DARK);
+        actionPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
-        // Cargamos inicialmente los textos
-        refrescarTextosDetalle.run();
+        // Botones Personalizados
+        ModernButton btnModificar = new ModernButton("Modificar Datos", BTN_DEFAULT);
+        ModernButton btnSismograma = new ModernButton("Generar Sismograma", BTN_BLUE);
+        ModernButton btnMapa = new ModernButton("Ver en Mapa", BTN_DEFAULT);
+        btnMapa.setEnabled(false);
 
-        // Construimos los paneles contenedores
-        JPanel panelContenido = new JPanel(new GridLayout(1, 2));
-        panelContenido.add(new JScrollPane(panelIzquierdo));
-        panelContenido.add(new JScrollPane(panelDerecho));
+        // Acciones
+        btnModificar.addActionListener(e -> {
+            mostrarFormularioEdicion(dialog, evento, () -> {
+                // Callback: Refrescar la vista dashboard al volver
+                tabs.setComponentAt(0, crearPanelResumen(evento));
+                actualizarTextoMuestras(evento, txtMuestras);
+                tabs.revalidate();
+            });
+        });
 
-        // ===== Botonera =====
-        JPanel panelBotones = new JPanel();
-
-        // 5) Botón “Modificar” abre el formulario de edición
-        JButton btnModificar = new JButton("Modificar Datos del Evento");
-        btnModificar.addActionListener(e
-                -> mostrarFormularioEdicion(dialog, evento, panelIzquierdo, panelDerecho)
-        );
-        panelBotones.add(btnModificar);
-
-        // 7) Botón “Ver Mapa” (inicialmente deshabilitado)
-        JButton btnMapa = new JButton("Visualizar Mapa");
-        btnMapa.setEnabled(false); // ← Inhabilitado hasta que se genere sismograma
-        btnMapa.addActionListener(e -> JOptionPane.showMessageDialog(
-                dialog,
-                "(Simulación) Mapa visualizado con éxito",
-                "Mapa",
-                JOptionPane.INFORMATION_MESSAGE
-        ));
-        panelBotones.add(btnMapa);
-
-        // 6) Botón “Generar Sismograma” 
-        JButton btnSismograma = new JButton("Generar Sismograma");
-        // Antes de presionar este botón, el botón “Ver Mapa” estará inhabilitado
         btnSismograma.addActionListener(e -> {
-            JOptionPane.showMessageDialog(
-                    dialog,
-                    "Sismograma generado con éxito",
-                    "Confirmación",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-            // Una vez que se genera el sismograma, habilitar el botón de “Ver Mapa”
+            JOptionPane.showMessageDialog(dialog, "Sismograma generado correctamente.");
             btnMapa.setEnabled(true);
+            btnMapa.setAccentColor(BTN_BLUE); // Activar color
         });
-        panelBotones.add(btnSismograma);
 
-        // 8) Botón “Volver” cierra el diálogo y recarga la lista principal
-        JButton btnVolver = new JButton("Volver");
-        btnVolver.addActionListener(e -> {
-            cargarEventos();
-            dialog.dispose();
-        });
-        panelBotones.add(btnVolver);
+        btnMapa.addActionListener(e -> 
+            JOptionPane.showMessageDialog(dialog, "(Simulación) Mapa desplegado.")
+        );
 
-        // 9) Combo + “Aceptar Acción” (Confirmar/Rechazar/Solicitar revisión a experto)
-        String[] opciones = {
-            "Confirmar evento",
-            "Rechazar evento",
-            "Solicitar revisión a experto"
-        };
+        // Combo y Acción Final
+        String[] opciones = {"Confirmar evento", "Rechazar evento", "Solicitar revisión experto"};
         JComboBox<String> comboAccion = new JComboBox<>(opciones);
-        JButton btnAceptarAccion = new JButton("Aceptar Acción");
-        btnAceptarAccion.addActionListener(e -> {
+        comboAccion.setFont(FONT_MAIN);
+        
+        ModernButton btnAceptar = new ModernButton("Aceptar Acción", BTN_GREEN);
+        
+        btnAceptar.addActionListener(e -> {
             String seleccion = (String) comboAccion.getSelectedItem();
-            boolean ok = gestor.confirmarAccionEvento(evento, seleccion);
-            if (ok) {
-                JOptionPane.showMessageDialog(
-                        dialog,
-                        "Evento actualizado correctamente como: " + seleccion,
-                        "Confirmación",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-                cargarEventos();  // Al recargar, ese evento ya no será AUTO_DETECTADO
+            if (gestor.confirmarAccionEvento(evento, seleccion)) {
+                JOptionPane.showMessageDialog(dialog, "Evento procesado: " + seleccion);
+                cargarEventos();
                 dialog.dispose();
             } else {
-                JOptionPane.showMessageDialog(
-                        dialog,
-                        "Faltan datos obligatorios (magnitud, alcance u origen).",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(dialog, "Faltan datos obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
-        panelBotones.add(comboAccion);
-        panelBotones.add(btnAceptarAccion);
 
-        // Agregamos todos los componentes al diálogo
-        dialog.add(panelContenido, BorderLayout.CENTER);
-        dialog.add(panelBotones, BorderLayout.SOUTH);
-        dialog.setLocationRelativeTo(this);
+        actionPanel.add(btnModificar);
+        actionPanel.add(btnSismograma);
+        actionPanel.add(btnMapa);
+        actionPanel.add(Box.createHorizontalStrut(20));
+        actionPanel.add(comboAccion);
+        actionPanel.add(btnAceptar);
+
+        dialog.add(actionPanel, BorderLayout.SOUTH);
         dialog.setVisible(true);
-
-        // Cuando se cierre el diálogo, recargamos la tabla principal
         cargarEventos();
     }
 
-    /**
-     * Muestra el formulario de edición de datos del evento. Ahora: - No
-     * cerramos el diálogo principal, - Actualizamos en el mismo diálogo
-     * (panelIzquierdo y panelDerecho) si el usuario guarda cambios.
-     */
-    private void mostrarFormularioEdicion(JDialog parentDialog,
-            EventoSismico evento,
-            JTextArea panelIzquierdo,
-            JTextArea panelDerecho) {
-        JDialog formDialog = new JDialog(this, "Editar Datos del Evento", true);
-        formDialog.setSize(400, 300);
-        formDialog.setLayout(new GridLayout(5, 2));
+    // --- Panel de Tarjetas (Grid de Datos Reales) ---
+    private JPanel crearPanelResumen(EventoSismico ev) {
+        JPanel panel = new JPanel(new GridLayout(2, 1, 15, 15));
+        panel.setBackground(BG_DARK);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
+        // TARJETA 1: FÍSICA (Magnitud, Profundidad, Coordenadas)
+        JPanel cardFisica = new JPanel(new GridLayout(2, 2, 20, 20));
+        estilizarCard(cardFisica, "Datos Físicos");
+        
+        // Datos extraídos del objeto ev
+        agregarDato(cardFisica, "Magnitud", String.valueOf(ev.getValorMagnitud()) + " Mw", BTN_BLUE);
+        
+        // La profundidad viene de ClasificacionSismo (ej: Superficial, Profundo)
+        String profundidad = (ev.getClasificacion() != null) ? ev.getClasificacion().getNombre() : "Sin Definir";
+        agregarDato(cardFisica, "Profundidad / Clasif.", profundidad, TEXT_PRIMARY);
+        
+        agregarDato(cardFisica, "Latitud Epicentro", ev.tomarLatitudEpicentro() + "°", TEXT_PRIMARY);
+        agregarDato(cardFisica, "Longitud Epicentro", ev.tomarLongitudEpicentro() + "°", TEXT_PRIMARY);
+
+        // TARJETA 2: CLASIFICACIÓN (Origen, Alcance, Estado)
+        JPanel cardClasif = new JPanel(new GridLayout(2, 2, 20, 20));
+        estilizarCard(cardClasif, "Clasificación y Estado");
+        
+        // Datos reales de las relaciones
+        String origen = (ev.getOrigenGeneracion() != null) ? ev.getOrigenGeneracion().getNombre() : "---";
+        String alcance = (ev.getAlcanceSismo() != null) ? ev.getAlcanceSismo().getNombre() : "---";
+        
+        agregarDato(cardClasif, "Origen Generación", origen, TEXT_PRIMARY);
+        agregarDato(cardClasif, "Alcance Sismo", alcance, TEXT_PRIMARY);
+        agregarDato(cardClasif, "Estado Actual", ev.getEstado().getNombre(), BTN_GREEN);
+        
+        // Cantidad de estaciones reales en la lista
+        int cantEstaciones = (ev.getSerieTemporal() != null) ? ev.getSerieTemporal().size() : 0;
+        agregarDato(cardClasif, "Estaciones Reportadas", String.valueOf(cantEstaciones), TEXT_PRIMARY);
+
+        panel.add(cardFisica);
+        panel.add(cardClasif);
+        return panel;
+    }
+
+    private void estilizarCard(JPanel panel, String titulo) {
+        panel.setBackground(BG_SURFACE);
+        panel.setBorder(BorderFactory.createTitledBorder(
+            new LineBorder(new Color(60, 60, 60)), titulo, 
+            0, 0, FONT_BOLD, TEXT_SECONDARY
+        ));
+    }
+
+    private void agregarDato(JPanel panel, String label, String valor, Color colorValor) {
+        JPanel pDato = new JPanel(new BorderLayout());
+        pDato.setBackground(BG_SURFACE); // Transparente respecto al padre
+        
+        JLabel lblTitulo = new JLabel(label);
+        lblTitulo.setForeground(TEXT_SECONDARY);
+        lblTitulo.setFont(new Font("Roboto", Font.PLAIN, 12));
+        
+        JLabel lblValor = new JLabel(valor);
+        lblValor.setForeground(colorValor);
+        lblValor.setFont(new Font("Roboto", Font.BOLD, 18));
+        
+        pDato.add(lblTitulo, BorderLayout.NORTH);
+        pDato.add(lblValor, BorderLayout.CENTER);
+        panel.add(pDato);
+    }
+
+    // --- Botón Moderno Personalizado ---
+    private static class ModernButton extends JButton {
+        private Color accentColor;
+        
+        public ModernButton(String text, Color color) {
+            super(text);
+            this.accentColor = color;
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorder(new EmptyBorder(10, 20, 10, 20));
+            setForeground(Color.WHITE);
+            setFont(FONT_BOLD);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) { 
+                    if(isEnabled()) setForeground(accentColor.brighter()); 
+                }
+                @Override
+                public void mouseExited(MouseEvent e) { 
+                    if(isEnabled()) setForeground(Color.WHITE); 
+                }
+            });
+        }
+
+        public void setAccentColor(Color c) { this.accentColor = c; repaint(); }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (!isEnabled()) {
+                g.setColor(new Color(60,60,60));
+                setForeground(Color.GRAY);
+            } else {
+                g.setColor(accentColor);
+                setForeground(Color.WHITE);
+            }
+            
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            // Dibujar fondo redondeado
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+            super.paintComponent(g);
+        }
+    }
+
+    private void actualizarTextoMuestras(EventoSismico evento, JTextArea area) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DATOS TÉCNICOS DEL EVENTO SISMO ID: ").append(evento.getIdEvento()).append("\n");
+        sb.append("--------------------------------------------------\n");
+        if (evento.getSerieTemporal() != null) {
+            for (SerieTemporal serie : evento.getSerieTemporal()) {
+                sb.append("ESTACIÓN: ").append(serie.getEstacionSismica().getNombre()).append("\n");
+                sb.append("   Frecuencia: ").append(serie.getFrecuenciaMuestreo()).append("\n");
+                for (MuestraSismica m : serie.getMuestrasSismicas()) {
+                    sb.append("   > ").append(m.getFechaHoraMuestra()).append(" | ");
+                    for (DetalleMuestraSismica d : m.getDetalleMuestraSismica()) {
+                        sb.append(d.getTipoDeDato().getDenominacion())
+                          .append(": ").append(d.getValor()).append(" ");
+                    }
+                    sb.append("\n");
+                }
+                sb.append("\n");
+            }
+        }
+        area.setText(sb.toString());
+    }
+
+    private void mostrarFormularioEdicion(JDialog parent, EventoSismico evento, Runnable onSave) {
+        JDialog form = new JDialog(parent, "Editar Datos", true);
+        form.setSize(450, 350);
+        form.getContentPane().setBackground(BG_DARK);
+        form.setLayout(new GridBagLayout());
+        form.setLocationRelativeTo(parent);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
         List<AlcanceSismo> alcances = gestor.getAlcances();
         List<OrigenDeGeneracion> origenes = gestor.getOrigenes();
         List<MagnitudRichter> magnitudes = gestor.getMagnitudes();
 
-        // ComboBoxes con los valores actuales seleccionados
-        JComboBox<String> cbAlcance = new JComboBox<>(
-                alcances.stream().map(AlcanceSismo::getNombre).toArray(String[]::new)
-        );
-        JComboBox<String> cbOrigen = new JComboBox<>(
-                origenes.stream().map(OrigenDeGeneracion::getNombre).toArray(String[]::new)
-        );
-        JComboBox<String> cbMagnitud = new JComboBox<>(
-                magnitudes.stream().map(MagnitudRichter::getDescripcionMagnitud).toArray(String[]::new)
-        );
+        JComboBox<String> cbAlc = new JComboBox<>(alcances.stream().map(AlcanceSismo::getNombre).toArray(String[]::new));
+        JComboBox<String> cbOri = new JComboBox<>(origenes.stream().map(OrigenDeGeneracion::getNombre).toArray(String[]::new));
+        JComboBox<String> cbMag = new JComboBox<>(magnitudes.stream().map(MagnitudRichter::getDescripcionMagnitud).toArray(String[]::new));
 
-        // Seteamos el valor actual en cada combo
-        cbAlcance.setSelectedItem(evento.getAlcanceSismo().getNombre());
-        cbOrigen.setSelectedItem(evento.getOrigenGeneracion().getNombre());
-        cbMagnitud.setSelectedItem(evento.tomarMagnitud().getDescripcionMagnitud());
+        // Sets de valores actuales
+        if(evento.getAlcanceSismo() != null) cbAlc.setSelectedItem(evento.getAlcanceSismo().getNombre());
+        if(evento.getOrigenGeneracion() != null) cbOri.setSelectedItem(evento.getOrigenGeneracion().getNombre());
+        if(evento.tomarMagnitud() != null) cbMag.setSelectedItem(evento.tomarMagnitud().getDescripcionMagnitud());
 
-        JButton btnGuardar = new JButton("Guardar");
-        JButton btnCancelar = new JButton("Cancelar");
-
-        // Si el usuario pulsa “Guardar”:
+        ModernButton btnGuardar = new ModernButton("Guardar Cambios", BTN_GREEN);
         btnGuardar.addActionListener(e -> {
-            AlcanceSismo nuevoAlcance = alcances.get(cbAlcance.getSelectedIndex());
-            OrigenDeGeneracion nuevoOrigen = origenes.get(cbOrigen.getSelectedIndex());
-            MagnitudRichter nuevaMagnitud = magnitudes.get(cbMagnitud.getSelectedIndex());
-
-            // 1) Actualizamos el evento (en la misma instancia que estamos mostrando)
-            gestor.actualizarDatosEvento(evento, nuevoAlcance, nuevoOrigen, nuevaMagnitud);
-
-            // 2) Mensaje de confirmación
-            JOptionPane.showMessageDialog(formDialog, "Datos actualizados correctamente.");
-
-            // 3) A estas alturas, 'evento' ya contiene los nuevos datos:
-            //    Actualizamos los dos paneles de texto del detalle
-            //    (recordar que esos paneles se pasaron como referencias finales)
-            //    Recalculamos el texto con los datos actualizados:
-            String fechaDetalle = evento.tomarFechaHoraOcurrencia().format(FORMATO_FECHA);
-
-            StringBuilder sbIzq = new StringBuilder();
-            sbIzq.append("Fecha/Hora: ").append(fechaDetalle).append("\n")
-                    .append("Latitud Epicentro: ").append(evento.tomarLatitudEpicentro()).append("\n")
-                    .append("Longitud Epicentro: ").append(evento.tomarLongitudEpicentro()).append("\n")
-                    .append("Magnitud: ").append(evento.tomarMagnitud().getDescripcionMagnitud()).append("\n")
-                    .append("Alcance: ").append(evento.getAlcanceSismo().getNombre()).append("\n")
-                    .append("Clasificación: ").append(evento.getClasificacion().getNombre()).append("\n")
-                    .append("Origen: ").append(evento.getOrigenGeneracion().getNombre()).append("\n")
-                    .append("Estado Actual: ").append(evento.getEstado().getNombre()).append("\n");
-            panelIzquierdo.setText(sbIzq.toString());
-
-            StringBuilder sbDer = new StringBuilder();
-            for (SerieTemporal serie : evento.getSerieTemporal()) {
-                String nombreEstacion = serie.getEstacionSismica().getNombre();
-                sbDer.append("[Serie en estación: ").append(nombreEstacion).append("]\n")
-                        .append("   Condición: ").append(serie.getCondicionAlarma()).append("\n")
-                        .append("   Inicio registro: ").append(serie.getFechaHoraInicioRegistroMuestras()).append("\n")
-                        .append("   Fin registro: ").append(serie.getFechaHoraRegistro()).append("\n")
-                        .append("   Frecuencia: ").append(serie.getFrecuenciaMuestreo()).append("\n");
-                for (MuestraSismica muestra : serie.getMuestrasSismicas()) {
-                    sbDer.append("     [Muestra] Hora: ").append(muestra.getFechaHoraMuestra()).append("\n");
-                    for (DetalleMuestraSismica d : muestra.getDetalleMuestraSismica()) {
-                        sbDer.append("        - ")
-                                .append(d.getTipoDeDato().getDenominacion())
-                                .append(": ").append(d.getValor())
-                                .append(" ").append(d.getTipoDeDato().getNombreUnidadMedida())
-                                .append("\n");
-                    }
-                }
-                sbDer.append("-----------------------------\n");
-            }
-            panelDerecho.setText(sbDer.toString());
-
-            // 4) Cerramos sólo el formulario de edición (no el diálogo principal)
-            formDialog.dispose();
+            gestor.actualizarDatosEvento(evento, 
+                alcances.get(cbAlc.getSelectedIndex()), 
+                origenes.get(cbOri.getSelectedIndex()), 
+                magnitudes.get(cbMag.getSelectedIndex())
+            );
+            JOptionPane.showMessageDialog(form, "Datos actualizados localmente.");
+            onSave.run();
+            form.dispose();
         });
 
-        btnCancelar.addActionListener(e -> formDialog.dispose());
-
-        formDialog.add(new JLabel("Alcance:"));
-        formDialog.add(cbAlcance);
-        formDialog.add(new JLabel("Origen:"));
-        formDialog.add(cbOrigen);
-        formDialog.add(new JLabel("Magnitud:"));
-        formDialog.add(cbMagnitud);
-        formDialog.add(btnCancelar);
-        formDialog.add(btnGuardar);
-
-        formDialog.setLocationRelativeTo(this);
-        formDialog.setVisible(true);
+        agregarCampoForm(form, "Alcance:", cbAlc, gbc, 0);
+        agregarCampoForm(form, "Origen:", cbOri, gbc, 1);
+        agregarCampoForm(form, "Magnitud:", cbMag, gbc, 2);
+        
+        gbc.gridy = 3; gbc.gridwidth = 2;
+        form.add(btnGuardar, gbc);
+        form.setVisible(true);
+    }
+    
+    private void agregarCampoForm(JDialog form, String label, JComponent comp, GridBagConstraints gbc, int y) {
+        gbc.gridx = 0; gbc.gridy = y; gbc.weightx = 0.3; gbc.gridwidth = 1;
+        JLabel l = new JLabel(label);
+        l.setForeground(TEXT_PRIMARY);
+        l.setFont(FONT_MAIN);
+        form.add(l, gbc);
+        
+        gbc.gridx = 1; gbc.weightx = 0.7;
+        form.add(comp, gbc);
     }
 }

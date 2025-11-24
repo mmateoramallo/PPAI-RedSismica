@@ -27,7 +27,7 @@ public class MagnitudRichterDAO {
         try (PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                lista.add(mapRow(rs));
+                lista.add(mapRow(rs)); //Creamos los objetos de Magnitud Ritcher a traves de cada linea de respuesta rs
             }
         }
         return lista;

@@ -58,14 +58,17 @@ public void bloquearEventoSismico(EventoSismico evento) {
         evento.bloquear();
         eventosDAO.actualizarEstado(evento);
     }
+    
+    public LocalDateTime getFechaHoraActual(){
+        return LocalDateTime.now();
+    }
 
     public void rechazarEvento(EventoSismico eventoSeleccionado) {
         
-        // Diagrama: getFechaHoraActual()
-        LocalDateTime fechaHoraActual = LocalDateTime.now();
+         LocalDateTime fechaHoraActual = getFechaHoraActual();
         
-        // Diagrama: rechazarEvento(..., fecha, ASlogueado)
         eventoSeleccionado.rechazarEvento(fechaHoraActual, this.analistaLogueado);
+        
         eventosDAO.actualizarEstado(eventoSeleccionado);
     }
 
@@ -107,9 +110,14 @@ public void tomarEventoSeleccionado(EventoSismico evento) {
     }
 
     public void actualizarDatosEvento(EventoSismico evento, AlcanceSismo a, OrigenDeGeneracion o, MagnitudRichter m) {
+        
+        //Aca actualizo con el DAO
+        
         evento.setAlcanceSismo(a);
         evento.setOrigenGeneracion(o);
         evento.setMagnitud(m);
+        
+        eventosDAO.actualizarEventoCompleto(evento);
     }
 
     // Getters para combos

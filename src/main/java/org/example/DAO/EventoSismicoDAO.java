@@ -118,7 +118,7 @@ public class EventoSismicoDAO {
     }
     
     public void actualizarDatos(EventoSismico evento) {
-        // CORREGIDO: Usamos los nombres reales de las columnas en el WHERE
+       
         String sql = "UPDATE evento_sismico SET " +
                      "id_alcance = (SELECT id_alcance FROM alcance_sismo WHERE nombre_alcance = ? LIMIT 1), " +
                      "id_origen = (SELECT id_origen FROM origen_generacion WHERE nombre_origen_generacion = ? LIMIT 1), " +
@@ -138,6 +138,48 @@ public class EventoSismicoDAO {
             e.printStackTrace();
         }
     }
+    
+    // Método para persistir TODOS los cambios al finalizar el Caso de Uso
+    public void actualizarEventoCompleto(EventoSismico evento) {
+        String sql = "UPDATE evento_sismico SET " +
+                     "id_alcance = (SELECT id_alcance FROM alcance_sismo WHERE nombre_alcance = ? LIMIT 1), " +
+                     "id_origen = (SELECT id_origen FROM origen_generacion WHERE nombre_origen_generacion = ? LIMIT 1), " +
+                     "id_magnitud = (SELECT id_magnitud FROM magnitud_richter WHERE descripcion = ? LIMIT 1), " +
+                     "id_estado_actual = (SELECT id_estado FROM estado WHERE nombre = ? LIMIT 1), " + // <-- Actualiza estado
+                     "id_responsable = ? " + // <-- Actualiza responsable (Analista)
+                     "WHERE id_evento = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            // 1. Alcance
+            ps.setString(1, evento.getAlcanceSismo().getNombre());
+            
+            // 2. Origen
+            ps.setString(2, evento.getOrigenGeneracion().getNombre());
+            
+            // 3. Magnitud (usando descripción como clave de búsqueda según tu lógica anterior)
+            ps.setString(3, evento.tomarMagnitud().getDescripcionMagnitud());
+
+            // 4. Estado (El nombre debe coincidir EXACTO con la DB: "Rechazado", "Confirmado", etc.)
+            ps.setString(4, evento.getEstado().getNombre());
+
+            // 5. Responsable (Aquí asumimos que tienes el ID del usuario logueado en algún lado, 
+            // si no lo tienes en el objeto evento, pásalo como parámetro extra).
+            // Por ahora pongo 1 por defecto o el id que venga en el evento si lo agregaste.
+            ps.setInt(5, 1); 
+
+            // 6. ID Evento (WHERE)
+            ps.setInt(6, evento.getIdEvento());
+
+            int rows = ps.executeUpdate();
+            if(rows > 0) {
+                System.out.println("Evento actualizado correctamente en BD.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Error al persistir cambios del evento.");
+        }
+    }
+    
     
     private Estado mapearEstado(String nombreDB) {
         if (nombreDB == null) return null;
