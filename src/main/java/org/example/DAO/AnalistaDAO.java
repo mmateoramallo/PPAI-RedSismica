@@ -11,8 +11,8 @@ public class AnalistaDAO {
     // ALTA (Create)
     public void insertar(Analista analista) {
         String sql = "INSERT INTO analista (nombre_analista, apellido, mail, legajo) VALUES (?, ?, ?, ?)";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        Connection conn = ConexionDB.getConnection();
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             stmt.setString(1, analista.tomarNombre());
             stmt.setString(2, analista.tomarApellido());
             stmt.setString(3, analista.tomarMail());
@@ -27,8 +27,8 @@ public class AnalistaDAO {
     // CONSULTA (Read)
     public Analista buscarPorId(int id) {
         String sql = "SELECT * FROM analista WHERE id_analista = ?";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        Connection conn = ConexionDB.getConnection();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -41,5 +41,20 @@ public class AnalistaDAO {
         return null;
     }
     
-    // MODIFICACION y BAJA (Omitidos por brevedad, siguen la misma lógica con UPDATE y DELETE)
+   public Analista buscarPorNombre(String nombre){
+       String sql = "SELECT * FROM analista WHERE nombre_analista = ?";
+       Connection conn = ConexionDB.getConnection();
+       try(PreparedStatement stmt = conn.prepareStatement(sql)){
+           stmt.setString(1, nombre);
+           ResultSet rs = stmt.executeQuery();
+           if(rs.next()){
+               return new Analista(rs.getString("nombre_analista"), rs.getString("apellido"), 
+                                    rs.getString("mail"), rs.getString("legajo"), rs.getString("contraseña"));
+           }
+       }catch(SQLException e){
+           e.printStackTrace();
+          
+       }
+        return null;
+   }
 }

@@ -6,6 +6,7 @@ package org.example.utils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 /**
  *
@@ -19,13 +20,17 @@ public class ConexionDB {
     private static Connection con;
 
     public static Connection getConnection() {
-        if (ConexionDB.con == null) {
-            try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                ConexionDB.con = DriverManager.getConnection(ConexionDB.URL, ConexionDB.USER, ConexionDB.PASSWORD);
-            } catch (Exception e) {
-                e.printStackTrace();
+        try {
+            if (ConexionDB.con == null || ConexionDB.con.isClosed() ) {
+                try {
+                    Class.forName("com.mysql.cj.jdbc.Driver");
+                    ConexionDB.con = DriverManager.getConnection(ConexionDB.URL, ConexionDB.USER, ConexionDB.PASSWORD);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
         return ConexionDB.con;
     }

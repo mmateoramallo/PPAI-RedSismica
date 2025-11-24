@@ -13,6 +13,8 @@ public class Analista {
 
     private Integer idAnalista;
     
+    private String contraseña;
+    
     public String tomarApellido() {
         return apellido;
     }
@@ -52,19 +54,55 @@ public class Analista {
     public void setIdAnalista(Integer idAnalista) {
         this.idAnalista = idAnalista;
     }
+
+    public String getApellido() {
+        return apellido;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getMail() {
+        return mail;
+    }
+
+    public String getLegajo() {
+        return legajo;
+    }
     
     
     
     public Analista() {
     }
     
-    public Analista(String nombre, String apellido, String mail, String telefono) {
+    public Analista(String nombre, String apellido, String mail, String telefono, String contraseña) {
         this.nombre = nombre;
         this.apellido = apellido;
         this.mail = mail;
         this.legajo = telefono;
+        this.contraseña = contraseña;
     }
 
+    public Analista(String apellido, String nombre, String mail, String legajo) {
+        this.apellido = apellido;
+        this.nombre = nombre;
+        this.mail = mail;
+        this.legajo = legajo;
+    }
+    
+    
+    
+    public String getContraseña() {
+        return contraseña;
+    }
+
+    public void setContraseña(String contraseña) {
+        this.contraseña = contraseña;
+    }
+    
+    
+    
     @Override
     public String toString() {
         return "Analista{" + "apellido=" + apellido + ", nombre=" + nombre + ", mail=" + mail + ", telefono=" + legajo + '}';

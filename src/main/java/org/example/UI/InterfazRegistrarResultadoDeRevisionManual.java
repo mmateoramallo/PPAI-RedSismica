@@ -10,6 +10,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.format.DateTimeFormatter;
@@ -17,7 +19,7 @@ import java.util.List;
 
 public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
 
-    // --- Paleta de Colores "Dark Modern" Refinada ---
+    // --- Paleta de Colores "Dark Modern" ---
     private static final Color BG_DARK = new Color(18, 18, 18);
     private static final Color BG_SURFACE = new Color(30, 30, 30);
     private static final Color BG_HEADER_TABLE = new Color(45, 45, 45);
@@ -25,13 +27,12 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
     private static final Color TEXT_PRIMARY = new Color(240, 240, 240);
     private static final Color TEXT_SECONDARY = new Color(160, 160, 160);
     
-    // Colores de Acción
     private static final Color BTN_BLUE = new Color(64, 158, 255);
     private static final Color BTN_GREEN = new Color(103, 194, 58);
-    private static final Color BTN_RED = new Color(245, 108, 108);
+    private static final Color BTN_RED = new Color(245, 108, 108); // Rojo para la alerta
     private static final Color BTN_DEFAULT = new Color(70, 70, 70);
 
-    // Tipografía base (Intenta usar Roboto, sino usa la por defecto del sistema)
+    // Fuentes
     private static final Font FONT_MAIN = new Font("Roboto", Font.PLAIN, 14);
     private static final Font FONT_BOLD = new Font("Roboto", Font.BOLD, 14);
     private static final Font FONT_TITLE = new Font("Roboto", Font.BOLD, 22);
@@ -39,17 +40,17 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
     private JTable tablaEventos;
     private DefaultTableModel modeloTabla;
     private JPanel panelPrincipal;
-    private List<EventoSismico> eventos;
+    private JLabel lblNotificacion; // <--- NUEVO COMPONENTE
+    private Timer timerBlink;       // <--- TIMER PARA ANIMACIÓN
     
+    private List<EventoSismico> eventos;
     private final GestorRegistrarResultadoDeRevisionManual gestor;
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private boolean yaPidioSeleccion = false;
 
     public InterfazRegistrarResultadoDeRevisionManual() {
         super("Red Sísmica - Dashboard de Revisión");
         this.gestor = new GestorRegistrarResultadoDeRevisionManual();
 
-        // Diagrama: Paso inicial
         gestor.nuevaRevision();
 
         initComponents();
@@ -100,7 +101,21 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         scrollPane.getViewport().setBackground(BG_DARK);
         scrollPane.setBorder(BorderFactory.createLineBorder(BG_SURFACE));
         
-        // Listener de Selección
+        // --- 3. Listener de Selección (LOGICA CLAVE AQUÍ) ---
+        tablaEventos.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                if (tablaEventos.getSelectedRow() != -1) {
+                    // SI SELECCIONA: Detener parpadeo, ocultar mensaje
+                    detenerParpadeo();
+                    lblNotificacion.setVisible(false);
+                } else {
+                    // SI DES-SELECCIONA: Mostrar mensaje neutral
+                    resetearNotificacion();
+                    lblNotificacion.setVisible(true);
+                }
+            }
+        });
+
         tablaEventos.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -112,18 +127,77 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
 
         JPanel tableContainer = new JPanel(new BorderLayout());
         tableContainer.setBackground(BG_DARK);
-        tableContainer.setBorder(new EmptyBorder(20, 0, 0, 0));
+        tableContainer.setBorder(new EmptyBorder(20, 0, 20, 0)); // Margen abajo para el label
         tableContainer.add(scrollPane, BorderLayout.CENTER);
 
         panelPrincipal.add(tableContainer, BorderLayout.CENTER);
+
+        // --- 4. Panel Inferior con Notificación (Estilo Footer) ---
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        footerPanel.setBackground(BG_DARK);
+        
+        // Configuración inicial del Label de Notificación
+        // Usamos un ícono unicode ⓘ para que se vea como en la imagen
+        lblNotificacion = new JLabel("ⓘ Por favor seleccione un registro de la tabla para continuar");
+        lblNotificacion.setFont(new Font("Roboto", Font.PLAIN, 14));
+        lblNotificacion.setForeground(TEXT_SECONDARY);
+        lblNotificacion.setIconTextGap(10);
+        
+        footerPanel.add(lblNotificacion);
+        panelPrincipal.add(footerPanel, BorderLayout.SOUTH);
+
         add(panelPrincipal);
     }
 
-    // --- Configuración Visual de la Tabla ---
+    // --- MÉTODO: Activar Alerta Visual (Parpadeo) ---
+    private void activarAlertaParpadeante() {
+        if (tablaEventos.getSelectedRow() != -1) return; // Si ya seleccionó, no molestar.
+
+        lblNotificacion.setText("⚠ ¡Atención! Debe seleccionar un registro para continuar.");
+        lblNotificacion.setForeground(BTN_RED);
+        lblNotificacion.setVisible(true);
+
+        // Timer para hacer parpadear el texto (Blink)
+        if (timerBlink != null && timerBlink.isRunning()) timerBlink.stop();
+        
+        timerBlink = new Timer(500, new ActionListener() {
+            boolean visible = true;
+            int count = 0;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Alternar color entre Rojo y Transparente/Fondo
+                if (visible) {
+                    lblNotificacion.setForeground(BG_DARK); // "Invisible"
+                } else {
+                    lblNotificacion.setForeground(BTN_RED); // Visible rojo
+                }
+                visible = !visible;
+                count++;
+                
+                // Detener después de unos segundos (ej. 10 parpadeos) para no marear
+                if (count > 10) {
+                    detenerParpadeo();
+                    lblNotificacion.setForeground(BTN_RED); // Dejarlo en rojo fijo
+                }
+            }
+        });
+        timerBlink.start();
+    }
+
+    private void detenerParpadeo() {
+        if (timerBlink != null) timerBlink.stop();
+    }
+
+    private void resetearNotificacion() {
+        detenerParpadeo();
+        lblNotificacion.setText("ⓘ Por favor seleccione un registro de la tabla para continuar");
+        lblNotificacion.setForeground(TEXT_SECONDARY);
+    }
+
     private void configurarTabla(JTable table) {
         table.setBackground(BG_DARK);
         table.setForeground(TEXT_PRIMARY);
-        table.setRowHeight(45); // Filas más altas
+        table.setRowHeight(45);
         table.setSelectionBackground(new Color(55, 55, 60));
         table.setSelectionForeground(TEXT_PRIMARY);
         table.setShowVerticalLines(false);
@@ -138,25 +212,22 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         header.setBorder(BorderFactory.createEmptyBorder());
         header.setPreferredSize(new Dimension(0, 40));
 
-        // Renderizado centrado genérico
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         for (int i = 0; i < table.getColumnCount(); i++) {
             if (i != 5) table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
-        // Renderizado "Pill" para Estado (Columna 5)
         table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                label.setOpaque(false); // Importante para que se vea el "pill" pintado abajo
+                label.setOpaque(false);
                 return new PillLabel((String) value);
             }
         });
     }
 
-    // Clase auxiliar para dibujar el "Pill" (Etiqueta redondeada de estado)
     private static class PillLabel extends JLabel {
         private final Color colorBorde;
         public PillLabel(String estado) {
@@ -164,7 +235,6 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
             setHorizontalAlignment(CENTER);
             setForeground(TEXT_PRIMARY);
             setFont(new Font("Roboto", Font.BOLD, 12));
-            
             if ("AutoDetectado".equals(estado)) this.colorBorde = BTN_BLUE;
             else if ("Confirmado".equals(estado)) this.colorBorde = BTN_GREEN;
             else if ("Rechazado".equals(estado)) this.colorBorde = BTN_RED;
@@ -174,13 +244,10 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(BG_DARK); // Fondo base
+            g2.setColor(BG_DARK);
             g2.fillRect(0,0,getWidth(),getHeight());
-            
-            // Dibujar Pill
-            g2.setColor(new Color(colorBorde.getRed(), colorBorde.getGreen(), colorBorde.getBlue(), 40)); // Fondo transparente
+            g2.setColor(new Color(colorBorde.getRed(), colorBorde.getGreen(), colorBorde.getBlue(), 40));
             g2.fillRoundRect(10, 8, getWidth()-20, getHeight()-16, 20, 20);
-            
             g2.setColor(colorBorde);
             g2.setStroke(new BasicStroke(1));
             g2.drawRoundRect(10, 8, getWidth()-20, getHeight()-16, 20, 20);
@@ -203,9 +270,11 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
             });
         }
         
+        // --- TIMER DE RECORDATORIO MODIFICADO ---
+        // Antes mostraba un JOptionPane, ahora activa la animación del label
         Timer timerPedido = new Timer(5000, e -> {
             gestor.pedirSeleccionEvento();
-            // Solo aviso visual, no bloqueo
+            activarAlertaParpadeante(); // <--- Aquí activamos el efecto visual en lugar del popup
         });
         timerPedido.setRepeats(false);
         timerPedido.start();
@@ -220,7 +289,7 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
     }
 
     // ======================================================================================
-    //     NUEVO DETALLE (DASHBOARD STYLE)
+    //     DETALLE (DASHBOARD STYLE) - Sin cambios funcionales, solo estilo
     // ======================================================================================
     private void mostrarDetalleDashboard(EventoSismico evento) {
         int opcion = JOptionPane.showConfirmDialog(this, 
@@ -237,17 +306,14 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         dialog.getContentPane().setBackground(BG_DARK);
         dialog.setLayout(new BorderLayout());
 
-        // --- PESTAÑAS ---
         JTabbedPane tabs = new JTabbedPane();
         tabs.setBackground(BG_DARK);
         tabs.setForeground(TEXT_PRIMARY);
         tabs.setFont(FONT_MAIN);
         
-        // Pestaña 1: Resumen Visual
         JPanel panelResumen = crearPanelResumen(evento);
         tabs.addTab("Resumen Visual", panelResumen);
 
-        // Pestaña 2: Datos Técnicos
         JTextArea txtMuestras = new JTextArea();
         txtMuestras.setEditable(false);
         txtMuestras.setBackground(BG_SURFACE);
@@ -261,21 +327,17 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
 
         dialog.add(tabs, BorderLayout.CENTER);
 
-        // --- BOTONERA INFERIOR ---
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
         actionPanel.setBackground(BG_DARK);
         actionPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
 
-        // Botones Personalizados
         ModernButton btnModificar = new ModernButton("Modificar Datos", BTN_DEFAULT);
         ModernButton btnSismograma = new ModernButton("Generar Sismograma", BTN_BLUE);
         ModernButton btnMapa = new ModernButton("Ver en Mapa", BTN_DEFAULT);
         btnMapa.setEnabled(false);
 
-        // Acciones
         btnModificar.addActionListener(e -> {
             mostrarFormularioEdicion(dialog, evento, () -> {
-                // Callback: Refrescar la vista dashboard al volver
                 tabs.setComponentAt(0, crearPanelResumen(evento));
                 actualizarTextoMuestras(evento, txtMuestras);
                 tabs.revalidate();
@@ -285,14 +347,13 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         btnSismograma.addActionListener(e -> {
             JOptionPane.showMessageDialog(dialog, "Sismograma generado correctamente.");
             btnMapa.setEnabled(true);
-            btnMapa.setAccentColor(BTN_BLUE); // Activar color
+            btnMapa.setAccentColor(BTN_BLUE);
         });
 
         btnMapa.addActionListener(e -> 
             JOptionPane.showMessageDialog(dialog, "(Simulación) Mapa desplegado.")
         );
 
-        // Combo y Acción Final
         String[] opciones = {"Confirmar evento", "Rechazar evento", "Solicitar revisión experto"};
         JComboBox<String> comboAccion = new JComboBox<>(opciones);
         comboAccion.setFont(FONT_MAIN);
@@ -322,39 +383,29 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         cargarEventos();
     }
 
-    // --- Panel de Tarjetas (Grid de Datos Reales) ---
     private JPanel crearPanelResumen(EventoSismico ev) {
         JPanel panel = new JPanel(new GridLayout(2, 1, 15, 15));
         panel.setBackground(BG_DARK);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // TARJETA 1: FÍSICA (Magnitud, Profundidad, Coordenadas)
         JPanel cardFisica = new JPanel(new GridLayout(2, 2, 20, 20));
         estilizarCard(cardFisica, "Datos Físicos");
         
-        // Datos extraídos del objeto ev
-        agregarDato(cardFisica, "Magnitud", String.valueOf(ev.getValorMagnitud()) + " Mw", BTN_BLUE);
-        
-        // La profundidad viene de ClasificacionSismo (ej: Superficial, Profundo)
+        agregarDato(cardFisica, "Magnitud", String.valueOf(ev.getValorMagnitud()) + " Escala Ritcher", BTN_BLUE);
         String profundidad = (ev.getClasificacion() != null) ? ev.getClasificacion().getNombre() : "Sin Definir";
         agregarDato(cardFisica, "Profundidad / Clasif.", profundidad, TEXT_PRIMARY);
-        
         agregarDato(cardFisica, "Latitud Epicentro", ev.tomarLatitudEpicentro() + "°", TEXT_PRIMARY);
         agregarDato(cardFisica, "Longitud Epicentro", ev.tomarLongitudEpicentro() + "°", TEXT_PRIMARY);
 
-        // TARJETA 2: CLASIFICACIÓN (Origen, Alcance, Estado)
         JPanel cardClasif = new JPanel(new GridLayout(2, 2, 20, 20));
         estilizarCard(cardClasif, "Clasificación y Estado");
         
-        // Datos reales de las relaciones
         String origen = (ev.getOrigenGeneracion() != null) ? ev.getOrigenGeneracion().getNombre() : "---";
         String alcance = (ev.getAlcanceSismo() != null) ? ev.getAlcanceSismo().getNombre() : "---";
         
         agregarDato(cardClasif, "Origen Generación", origen, TEXT_PRIMARY);
         agregarDato(cardClasif, "Alcance Sismo", alcance, TEXT_PRIMARY);
         agregarDato(cardClasif, "Estado Actual", ev.getEstado().getNombre(), BTN_GREEN);
-        
-        // Cantidad de estaciones reales en la lista
         int cantEstaciones = (ev.getSerieTemporal() != null) ? ev.getSerieTemporal().size() : 0;
         agregarDato(cardClasif, "Estaciones Reportadas", String.valueOf(cantEstaciones), TEXT_PRIMARY);
 
@@ -373,7 +424,7 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
 
     private void agregarDato(JPanel panel, String label, String valor, Color colorValor) {
         JPanel pDato = new JPanel(new BorderLayout());
-        pDato.setBackground(BG_SURFACE); // Transparente respecto al padre
+        pDato.setBackground(BG_SURFACE);
         
         JLabel lblTitulo = new JLabel(label);
         lblTitulo.setForeground(TEXT_SECONDARY);
@@ -388,7 +439,6 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         panel.add(pDato);
     }
 
-    // --- Botón Moderno Personalizado ---
     private static class ModernButton extends JButton {
         private Color accentColor;
         
@@ -404,31 +454,18 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
             
             addMouseListener(new MouseAdapter() {
                 @Override
-                public void mouseEntered(MouseEvent e) { 
-                    if(isEnabled()) setForeground(accentColor.brighter()); 
-                }
+                public void mouseEntered(MouseEvent e) { if(isEnabled()) setForeground(accentColor.brighter()); }
                 @Override
-                public void mouseExited(MouseEvent e) { 
-                    if(isEnabled()) setForeground(Color.WHITE); 
-                }
+                public void mouseExited(MouseEvent e) { if(isEnabled()) setForeground(Color.WHITE); }
             });
         }
-
         public void setAccentColor(Color c) { this.accentColor = c; repaint(); }
-
         @Override
         protected void paintComponent(Graphics g) {
-            if (!isEnabled()) {
-                g.setColor(new Color(60,60,60));
-                setForeground(Color.GRAY);
-            } else {
-                g.setColor(accentColor);
-                setForeground(Color.WHITE);
-            }
-            
+            if (!isEnabled()) { g.setColor(new Color(60,60,60)); setForeground(Color.GRAY); } 
+            else { g.setColor(accentColor); setForeground(Color.WHITE); }
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            // Dibujar fondo redondeado
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
             super.paintComponent(g);
         }
@@ -436,21 +473,13 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
 
     private void actualizarTextoMuestras(EventoSismico evento, JTextArea area) {
         StringBuilder sb = new StringBuilder();
-        sb.append("DATOS TÉCNICOS DEL EVENTO SISMO ID: ").append(evento.getIdEvento()).append("\n");
-        sb.append("--------------------------------------------------\n");
+        sb.append("DATOS TÉCNICOS ID: ").append(evento.getIdEvento()).append("\n------------------\n");
         if (evento.getSerieTemporal() != null) {
             for (SerieTemporal serie : evento.getSerieTemporal()) {
                 sb.append("ESTACIÓN: ").append(serie.getEstacionSismica().getNombre()).append("\n");
-                sb.append("   Frecuencia: ").append(serie.getFrecuenciaMuestreo()).append("\n");
                 for (MuestraSismica m : serie.getMuestrasSismicas()) {
-                    sb.append("   > ").append(m.getFechaHoraMuestra()).append(" | ");
-                    for (DetalleMuestraSismica d : m.getDetalleMuestraSismica()) {
-                        sb.append(d.getTipoDeDato().getDenominacion())
-                          .append(": ").append(d.getValor()).append(" ");
-                    }
-                    sb.append("\n");
+                    sb.append(" > ").append(m.getFechaHoraMuestra()).append("\n");
                 }
-                sb.append("\n");
             }
         }
         area.setText(sb.toString());
@@ -475,7 +504,6 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         JComboBox<String> cbOri = new JComboBox<>(origenes.stream().map(OrigenDeGeneracion::getNombre).toArray(String[]::new));
         JComboBox<String> cbMag = new JComboBox<>(magnitudes.stream().map(MagnitudRichter::getDescripcionMagnitud).toArray(String[]::new));
 
-        // Sets de valores actuales
         if(evento.getAlcanceSismo() != null) cbAlc.setSelectedItem(evento.getAlcanceSismo().getNombre());
         if(evento.getOrigenGeneracion() != null) cbOri.setSelectedItem(evento.getOrigenGeneracion().getNombre());
         if(evento.tomarMagnitud() != null) cbMag.setSelectedItem(evento.tomarMagnitud().getDescripcionMagnitud());
@@ -495,7 +523,6 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         agregarCampoForm(form, "Alcance:", cbAlc, gbc, 0);
         agregarCampoForm(form, "Origen:", cbOri, gbc, 1);
         agregarCampoForm(form, "Magnitud:", cbMag, gbc, 2);
-        
         gbc.gridy = 3; gbc.gridwidth = 2;
         form.add(btnGuardar, gbc);
         form.setVisible(true);
@@ -507,7 +534,6 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         l.setForeground(TEXT_PRIMARY);
         l.setFont(FONT_MAIN);
         form.add(l, gbc);
-        
         gbc.gridx = 1; gbc.weightx = 0.7;
         form.add(comp, gbc);
     }

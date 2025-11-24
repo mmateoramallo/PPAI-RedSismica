@@ -1,12 +1,11 @@
 package org.example;
 
-import org.example.UI.InterfazPrincipal;
-
+import org.example.UI.PantallaLogin;
 import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
-        // Configurar el Look & Feel (opcional)
+        // Intentar poner estilo Nimbus o Sistema, aunque forzaremos colores manuales luego
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -15,13 +14,13 @@ public class Main {
                 }
             }
         } catch (Exception ex) {
-            // Si Nimbus no está disponible, se ignora y se usa el Look & Feel por defecto
+            // Fallback
         }
 
-        // Arrancar la Interfaz Principal en el hilo de eventos de Swing
         SwingUtilities.invokeLater(() -> {
-            InterfazPrincipal ventana = new InterfazPrincipal();
-            ventana.setVisible(true);
+            // PASO 1: Arrancar con el Login
+            PantallaLogin login = new PantallaLogin();
+            login.setVisible(true);
         });
     }
 }

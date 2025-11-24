@@ -9,20 +9,18 @@ import java.util.List;
 
 public class EventoSismicoDAO {
 
-    private final Connection con;
     private final SerieTemporalDAO serieDAO;
 
     public EventoSismicoDAO() {
-        this.con = ConexionDB.getConnection();
         this.serieDAO = new SerieTemporalDAO();
     }
 
     public List<EventoSismico> buscarTodos() {
         List<EventoSismico> lista = new ArrayList<>();
         
-        // 1. SQL: Aquí seleccionamos los nombres largos REALES de la base de datos
+        // 1. SQL: Consulta con nombres reales y alias
         String sql = "SELECT e.*, " +
-                     "       est.nombre AS nombre_estado, " + // Estado suele ser 'nombre', usamos alias
+                     "       est.nombre AS nombre_estado, " + 
                      "       alc.nombre_alcance, alc.descripcion AS desc_alcance, " + 
                      "       ori.nombre_origen_generacion, ori.descripcion AS desc_origen, " + 
                      "       mag.descripcion AS desc_magnitud, mag.numero AS num_magnitud, " +
@@ -34,14 +32,17 @@ public class EventoSismicoDAO {
                      "LEFT JOIN magnitud_richter mag ON e.id_magnitud = mag.id_magnitud " +
                      "LEFT JOIN clasificacion_sismo cla ON e.id_clasificacion = cla.id_clasificacion";
 
-        try (PreparedStatement ps = con.prepareStatement(sql);
+        // SOLUCIÓN CONEXIÓN: Pedimos la conexión FUERA del try para que no se cierre automáticamente
+        Connection conn = ConexionDB.getConnection();
+
+        // Dentro del try solo ponemos PreparedStatement y ResultSet para que ESOS sí se cierren al terminar
+        try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 EventoSismico evento = new EventoSismico();
                 
                 // --- Datos Primitivos ---
-                // Verifica si en tu modelo es setId o setIdEvento
                 evento.setIdEvento(rs.getInt("id_evento")); 
                 
                 Timestamp ts = rs.getTimestamp("fecha_hora_ocurrencia");
@@ -54,8 +55,7 @@ public class EventoSismicoDAO {
                 evento.setValorMagnitud(rs.getInt("valor_magnitud"));
 
                 // --- Objetos Relacionados ---
-                // SOLUCIÓN: Usar exactamente el nombre de columna del SELECT
-                
+
                 // 1. ESTADO
                 String nombreEstado = rs.getString("nombre_estado");
                 evento.setEstadoActual(mapearEstado(nombreEstado));
@@ -68,8 +68,7 @@ public class EventoSismicoDAO {
                     ));
                 }
 
-                // 3. ORIGEN (Aquí estaba el error)
-                // Antes pedías "nombre_origen", pero en el select trajiste "nombre_origen_generacion"
+                // 3. ORIGEN
                 if (rs.getString("nombre_origen_generacion") != null) {
                     evento.setOrigenGeneracion(new OrigenDeGeneracion(
                         rs.getString("desc_origen"), 
@@ -85,17 +84,20 @@ public class EventoSismicoDAO {
                     ));
                 }
                 
-                // 5. CLASIFICACION (También corregido)
-                // Antes pedías "nombre_clasificacion", pero la columna es "nombre_clasificacion_sismo"
+                // 5. CLASIFICACION
                 if (rs.getString("nombre_clasificacion_sismo") != null) {
                      evento.setClasificacion(new ClasificacionSismo(
                          rs.getString("nombre_clasificacion_sismo"), 
-                         rs.getInt("km_desde"), // Asegurate que existan estas columnas
+                         rs.getInt("km_desde"), 
                          rs.getInt("km_hasta")
                      )); 
                 }
-                List<SerieTemporal> seriesDelEvento = serieDAO.buscarPorEvento(this.con,evento.getIdEvento());
+
+                // IMPORTANTE: Pasamos la conexión 'conn' (que sigue viva) al DAO hijo
+                // Nota: Asegúrate de que tu SerieTemporalDAO tenga un método buscarPorEvento(Connection, int)
+                List<SerieTemporal> seriesDelEvento = serieDAO.buscarPorEvento(conn, evento.getIdEvento());
                 evento.setSerieTemporal(seriesDelEvento);
+                
                 lista.add(evento);
             }
         } catch (SQLException e) {
@@ -103,29 +105,32 @@ public class EventoSismicoDAO {
             e.printStackTrace();
         }
         return lista;
-    }
+    }    
     
     public void actualizarEstado(EventoSismico evento) {
-        // Asegúrate que la tabla estado tenga columna 'nombre' o ajusta aquí también
         String sql = "UPDATE evento_sismico SET id_estado_actual = (SELECT id_estado FROM estado WHERE nombre = ?) WHERE id_evento = ?";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+        
+        Connection conn = ConexionDB.getConnection(); // Fuera del try
+        
+        try (PreparedStatement ps = conn.prepareStatement(sql)){
             ps.setString(1, evento.getEstado().getNombre());
             ps.setInt(2, evento.getIdEvento());
             ps.executeUpdate();
-        } catch (SQLException e) {
+        } catch(SQLException e){
             e.printStackTrace();
         }
     }
     
     public void actualizarDatos(EventoSismico evento) {
-       
         String sql = "UPDATE evento_sismico SET " +
                      "id_alcance = (SELECT id_alcance FROM alcance_sismo WHERE nombre_alcance = ? LIMIT 1), " +
                      "id_origen = (SELECT id_origen FROM origen_generacion WHERE nombre_origen_generacion = ? LIMIT 1), " +
                      "id_magnitud = (SELECT id_magnitud FROM magnitud_richter WHERE descripcion = ? LIMIT 1) " +
                      "WHERE id_evento = ?";
-                     
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+                      
+        Connection conn = ConexionDB.getConnection(); // Fuera del try
+        
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, evento.getAlcanceSismo().getNombre());
             ps.setString(2, evento.getOrigenGeneracion().getNombre());
             
@@ -145,26 +150,26 @@ public class EventoSismicoDAO {
                      "id_alcance = (SELECT id_alcance FROM alcance_sismo WHERE nombre_alcance = ? LIMIT 1), " +
                      "id_origen = (SELECT id_origen FROM origen_generacion WHERE nombre_origen_generacion = ? LIMIT 1), " +
                      "id_magnitud = (SELECT id_magnitud FROM magnitud_richter WHERE descripcion = ? LIMIT 1), " +
-                     "id_estado_actual = (SELECT id_estado FROM estado WHERE nombre = ? LIMIT 1), " + // <-- Actualiza estado
-                     "id_responsable = ? " + // <-- Actualiza responsable (Analista)
+                     "id_estado_actual = (SELECT id_estado FROM estado WHERE nombre = ? LIMIT 1), " + 
+                     "id_responsable = ? " + 
                      "WHERE id_evento = ?";
 
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
+        Connection conn = ConexionDB.getConnection(); // Fuera del try
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             // 1. Alcance
             ps.setString(1, evento.getAlcanceSismo().getNombre());
             
             // 2. Origen
             ps.setString(2, evento.getOrigenGeneracion().getNombre());
             
-            // 3. Magnitud (usando descripción como clave de búsqueda según tu lógica anterior)
+            // 3. Magnitud
             ps.setString(3, evento.tomarMagnitud().getDescripcionMagnitud());
 
-            // 4. Estado (El nombre debe coincidir EXACTO con la DB: "Rechazado", "Confirmado", etc.)
+            // 4. Estado
             ps.setString(4, evento.getEstado().getNombre());
 
-            // 5. Responsable (Aquí asumimos que tienes el ID del usuario logueado en algún lado, 
-            // si no lo tienes en el objeto evento, pásalo como parámetro extra).
-            // Por ahora pongo 1 por defecto o el id que venga en el evento si lo agregaste.
+            // 5. Responsable (ID 1 por defecto según tu código anterior)
             ps.setInt(5, 1); 
 
             // 6. ID Evento (WHERE)
@@ -179,7 +184,6 @@ public class EventoSismicoDAO {
             System.err.println("Error al persistir cambios del evento.");
         }
     }
-    
     
     private Estado mapearEstado(String nombreDB) {
         if (nombreDB == null) return null;
