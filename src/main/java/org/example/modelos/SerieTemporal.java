@@ -78,7 +78,7 @@ public class SerieTemporal {
     public void setEstacionSismica(EstacionSismologica estacionSismica) {
         this.estacionSismica = estacionSismica;
     }
-
+    
     @Override
     public String toString() {
         return "SerieTemporal{" +

@@ -1,25 +1,40 @@
 package org.example.gestor;
 
-import dbCoded.EventoGenerator;
-import dbCoded.ObjectFactory;
+
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import org.example.modelos.*;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.example.dao.*;
+
 
 public class GestorRegistrarResultadoDeRevisionManual {
 
-    private final EventoGenerator generador = new EventoGenerator();
-    private final ObjectFactory baseHardcodeada = new ObjectFactory();
-    private final List<EventoSismico> eventos = generador.generarEventosCompletos();
+    
+    
+    private final List<EventoSismico> eventos;
     private List<EventoSismico> eventosNoDet;
     
     
     // Simular sesion
     private Analista analistaLogueado;
     
+    //DAOs
+    private final EventoSismicoDAO eventosDAO;
+    private final AlcanceSismoDAO alcanceDAO;
+    private final OrigenDeGeneracionDAO origenDAO;
+    private final MagnitudRichterDAO magnitudDAO;
+    
     public GestorRegistrarResultadoDeRevisionManual() {
-        
         this.analistaLogueado = new Analista("Mateo", "Ramallo", "mateo.j.ramallo@gmail.com", "94441");
+        // Inicializar DAOs
+        this.eventosDAO = new EventoSismicoDAO();
+        this.alcanceDAO = new AlcanceSismoDAO();
+        this.origenDAO = new OrigenDeGeneracionDAO();
+        this.magnitudDAO = new MagnitudRichterDAO();
+        this.eventos = eventosDAO.buscarTodos();
     }
     
     
@@ -28,53 +43,46 @@ public class GestorRegistrarResultadoDeRevisionManual {
         System.out.println("Iniciando Revisión - Analista: " + analistaLogueado.tomarNombre());
         eventosNoDet = buscarEventoNoDet();
     }
-
+    
     public List<EventoSismico> buscarEventoNoDet() {
         return eventos.stream()
                 .filter(EventoSismico::sosAutoDetectado)
-                .sorted((e1, e2) -> e2.tomarFechaHoraOcurrencia().compareTo(e1.tomarFechaHoraOcurrencia())) //Ordenar fecha hora ocurrencia
+                .sorted((e1, e2) -> e2.tomarFechaHoraOcurrencia().compareTo(e1.tomarFechaHoraOcurrencia()))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Paso 8: “bloquearEventoSismico(evento)”.
-     * Ahora cumple con el patrón EXPERTO: El Gestor DELEGA, no hace el trabajo sucio.
-     * @param evento
-     */
-    public void bloquearEventoSismico(EventoSismico evento) {
-        // 1. Delegar lógica de estado al dominio
+    
+    
+public void bloquearEventoSismico(EventoSismico evento) {
+        // DELEGACIÓN: El evento delegará a su estado (AutoDetectado -> BloqueadoEnRevision)
         evento.bloquear();
-
-        // 2. Asegurar series (esto sí puede hacerlo el gestor o delegarlo también)
-        if (evento.getSerieTemporal() == null || evento.getSerieTemporal().isEmpty()) {
-             evento.setSerieTemporal(baseHardcodeada.generarSeriesTemporalesParaEvento());
-        }
+        eventosDAO.actualizarEstado(evento);
     }
 
-    /**
-     * Paso 16: confirmarAccionEvento
-     * CORREGIDO: Usamos switch para llamar a los métodos específicos del evento.
-     */
+    public void rechazarEvento(EventoSismico eventoSeleccionado) {
+        
+        // Diagrama: getFechaHoraActual()
+        LocalDateTime fechaHoraActual = LocalDateTime.now();
+        
+        // Diagrama: rechazarEvento(..., fecha, ASlogueado)
+        eventoSeleccionado.rechazarEvento(fechaHoraActual, this.analistaLogueado);
+        eventosDAO.actualizarEstado(eventoSeleccionado);
+    }
+
 public boolean confirmarAccionEvento(EventoSismico evento, String accion) {
-        if (evento.tomarMagnitud() == null ||
-            evento.getAlcanceSismo() == null ||
-            evento.getOrigenGeneracion() == null) {
+        if (evento.tomarMagnitud() == null || evento.getAlcanceSismo() == null || evento.getOrigenGeneracion() == null) {
             return false;
         }
-
         switch (accion) {
-            case "Confirmar evento":
-                // Pasamos al analista simulando la recuperación de sesión
-                evento.confirmar(this.analistaLogueado);
-                return true;
-                
             case "Rechazar evento":
-                // Trazabilidad: tomarDatosResponsable -> rechazar
-                evento.rechazar(this.analistaLogueado);
+                // Llamamos al método que cumple con la firma del diagrama
+                this.rechazarEvento(evento);
+                eventosDAO.actualizarEstado(evento);
                 return true;
                 
-            case "Solicitar revisión a experto":
-                // evento.derivar(this.analistaLogueado);
+            case "Confirmar evento":
+                evento.confirmarEvento(LocalDateTime.now(), this.analistaLogueado);
+                eventosDAO.actualizarEstado(evento);
                 return true;
                 
             default:
@@ -95,7 +103,7 @@ public boolean confirmarAccionEvento(EventoSismico evento, String accion) {
 
 public void tomarEventoSeleccionado(EventoSismico evento) { 
         System.out.println("Seleccionado: " + evento); 
-        bloquearEventoSismico(evento); //Se dispara el bloqueo
+        //bloquearEventoSismico(evento); //Se dispara el bloqueo
     }
 
     public void actualizarDatosEvento(EventoSismico evento, AlcanceSismo a, OrigenDeGeneracion o, MagnitudRichter m) {
@@ -105,7 +113,30 @@ public void tomarEventoSeleccionado(EventoSismico evento) {
     }
 
     // Getters para combos
-    public List<AlcanceSismo> getAlcances() { return baseHardcodeada.generarAlcances(); }
-    public List<OrigenDeGeneracion> getOrigenes() { return baseHardcodeada.generarOrígenes(); }
-    public List<MagnitudRichter> getMagnitudes() { return baseHardcodeada.generarMagnitudes(); }
+public List<AlcanceSismo> getAlcances() {
+        try {
+            return alcanceDAO.getAll();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>(); // O manejar error
+        }
+    }
+
+    public List<OrigenDeGeneracion> getOrigenes() {
+        try {
+            return origenDAO.getAll();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    public List<MagnitudRichter> getMagnitudes() {
+        try {
+            return magnitudDAO.getAll();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 }

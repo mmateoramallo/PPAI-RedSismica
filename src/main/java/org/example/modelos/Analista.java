@@ -9,8 +9,10 @@ public class Analista {
     private String apellido;
     private String nombre;
     private String mail;
-    private String telefono;
+    private String legajo;
 
+    private Integer idAnalista;
+    
     public String tomarApellido() {
         return apellido;
     }
@@ -35,14 +37,24 @@ public class Analista {
         this.mail = mail;
     }
 
-    public String tomarTelefono() {
-        return telefono;
+    public String tomarLegajo() {
+        return legajo;
     }
 
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
+    public void setLegajo(String legajo) {
+        this.legajo = legajo;
     }
 
+    public Integer getIdAnalista() {
+        return idAnalista;
+    }
+
+    public void setIdAnalista(Integer idAnalista) {
+        this.idAnalista = idAnalista;
+    }
+    
+    
+    
     public Analista() {
     }
     
@@ -50,12 +62,12 @@ public class Analista {
         this.nombre = nombre;
         this.apellido = apellido;
         this.mail = mail;
-        this.telefono = telefono;
+        this.legajo = telefono;
     }
 
     @Override
     public String toString() {
-        return "Analista{" + "apellido=" + apellido + ", nombre=" + nombre + ", mail=" + mail + ", telefono=" + telefono + '}';
+        return "Analista{" + "apellido=" + apellido + ", nombre=" + nombre + ", mail=" + mail + ", telefono=" + legajo + '}';
     }
     
     

@@ -1,40 +1,51 @@
 package org.example.modelos;
 
-public class Estado {
+import java.time.LocalDateTime;
 
-    private String ambito;
+public abstract class Estado {
 
-    private String nombreEstado;
+    protected String nombre;
 
-    public String getNombreEstado() {
-        return nombreEstado;
+    protected String descripcion;
+
+    public Estado(String nombre, String descripcion) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
     }
 
-    public void setNombreEstado(String nombreEstado) {
-        this.nombreEstado = nombreEstado;
+    public String getNombre() {
+        return nombre;
     }
 
-    public String getAmbito() {
-        return ambito;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
-    public void setAmbito(String ambito) {
-        this.ambito = ambito;
+    public String getDescripcion() {
+        return descripcion;
     }
 
-    public Estado(String ambito, String nombreEstado) {
-        this.ambito = ambito;
-        this.nombreEstado = nombreEstado;
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
-    public Estado() {
+    //Metodos del patron que se van a implementar en los estados concretos, se definen que lacen errores por defdecto
+    public void rechazarEvento(EventoSismico evento, LocalDateTime fechaHoraActual, Analista responsable) {
+        throw new UnsupportedOperationException("No se puede rechazar el evento en estado " + this.nombre);
+    }
+
+    public void confirmarEvento(EventoSismico evento, LocalDateTime fechaHoraActual, Analista responsable) {
+        throw new UnsupportedOperationException("No se puede confirmar el evento en estado " + this.nombre);
+    }
+
+    // Método bloquear diagrama de la primera entrega
+    public void bloquear(EventoSismico evento) {
+        throw new UnsupportedOperationException("No se puede bloquear el evento en estado " + this.nombre);
     }
 
     @Override
     public String toString() {
-        return "Estado{" +
-                "ambito='" + ambito + '\'' +
-                ", nombreEstado='" + nombreEstado + '\'' +
-                '}';
+        return "Estado{" + "nombre=" + nombre + ", descripcion=" + descripcion + '}';
     }
+
 }

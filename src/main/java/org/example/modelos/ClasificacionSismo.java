@@ -7,6 +7,8 @@ public class ClasificacionSismo {
 
     private String nombre;
 
+
+
     public Integer getKmProfundidadDesde() {
         return kmProfundidadDesde;
     }
@@ -31,14 +33,12 @@ public class ClasificacionSismo {
         this.kmProfundidadHasta = kmProfundidadHasta;
     }
 
-    public ClasificacionSismo(Integer kmProfundidadDesde, String nombre, Integer kmProfundidadHasta) {
-        this.kmProfundidadDesde = kmProfundidadDesde;
+    public ClasificacionSismo(String nombre,Integer kmProfundidadDesde,  Integer kmProfundidadHasta) {
         this.nombre = nombre;
+        this.kmProfundidadDesde = kmProfundidadDesde;
         this.kmProfundidadHasta = kmProfundidadHasta;
     }
-
-    public ClasificacionSismo() {
-    }
+   
 
     @Override
     public String toString() {

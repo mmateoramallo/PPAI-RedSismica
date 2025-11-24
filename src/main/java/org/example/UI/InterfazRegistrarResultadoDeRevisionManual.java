@@ -53,7 +53,7 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         panelPrincipal = new JPanel(new BorderLayout());
 
         modeloTabla = new DefaultTableModel(
-                new String[]{"Fecha/Hora", "Latitud", "Longitud", "Magnitud", "Estado"},
+                new String[]{"Id evneto","Fecha/Hora", "Latitud", "Longitud", "Magnitud", "Estado"},
                 0
         ) {
             @Override
@@ -133,11 +133,12 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         String fechaFormateada = ev.tomarFechaHoraOcurrencia().format(FORMATO_FECHA);
 
         modeloTabla.addRow(new Object[]{
+            ev.getIdEvento(),
             fechaFormateada,
             ev.tomarLatitudEpicentro(),
             ev.tomarLongitudEpicentro(),
             ev.getValorMagnitud(),
-            ev.getEstado().getNombreEstado()
+            ev.getEstado().getNombre()
         });
     }
 
@@ -191,7 +192,7 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
                     .append("Alcance: ").append(evento.getAlcanceSismo().getNombre()).append("\n")
                     .append("Clasificación: ").append(evento.getClasificacion().getNombre()).append("\n")
                     .append("Origen: ").append(evento.getOrigenGeneracion().getNombre()).append("\n")
-                    .append("Estado Actual: ").append(evento.getEstado().getNombreEstado()).append("\n");
+                    .append("Estado Actual: ").append(evento.getEstado().getNombre()).append("\n");
             panelIzquierdo.setText(sbIzq.toString());
 
             // 4.2) Panel derecho (series → muestras → detalle, incluyendo estación)
@@ -374,7 +375,7 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
                     .append("Alcance: ").append(evento.getAlcanceSismo().getNombre()).append("\n")
                     .append("Clasificación: ").append(evento.getClasificacion().getNombre()).append("\n")
                     .append("Origen: ").append(evento.getOrigenGeneracion().getNombre()).append("\n")
-                    .append("Estado Actual: ").append(evento.getEstado().getNombreEstado()).append("\n");
+                    .append("Estado Actual: ").append(evento.getEstado().getNombre()).append("\n");
             panelIzquierdo.setText(sbIzq.toString());
 
             StringBuilder sbDer = new StringBuilder();

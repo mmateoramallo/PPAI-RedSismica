@@ -11,16 +11,19 @@ public class EventoSismico {
     private MagnitudRichter magnitud;
     private OrigenDeGeneracion origenGeneracion;
     private AlcanceSismo alcanceSismo;
-    private Estado estado;
+    private Estado estado; //Tipo abstracto no se sabe que estado es, pero puede ser cualquiera
 
     //Experto
     private ArrayList<CambioEstado> cambioEstado = new ArrayList<>();
-
+    
+    //Mapear persistencia
+    private Integer idEvento;
+    
+    
     private List<SerieTemporal> serieTemporal;
-    
+
     private Analista responsable; //Integracion con el analista
-    
-    
+
     // Atributos propios
     private LocalDateTime fechaHoraFin;
     private LocalDateTime fechaHoraOcurrencia;
@@ -30,7 +33,20 @@ public class EventoSismico {
     private Integer longitudHipocentro;
     private Integer valorMagnitud;
 
+    public LocalDateTime getFechaHoraFin() {
+        return fechaHoraFin;
+    }
+
+    public void setFechaHoraFin(LocalDateTime fechaHoraFin) {
+        this.fechaHoraFin = fechaHoraFin;
+    }
+    
+    
+    
+    
     public EventoSismico() {
+        // Testing mientras previo al BD
+        // this.setEstadoActual(new AutoDetectado());
     }
 
     public LocalDateTime getFechaHoraOcurrencia() {
@@ -73,57 +89,6 @@ public class EventoSismico {
         this.longitudHipocentro = longitudHipocentro;
     }
 
-    // -------------------------------------------------------------
-    // MÉTODOS DE NEGOCIO (TRAZABILIDAD CON DIAGRAMA DE SECUENCIA)
-    // -------------------------------------------------------------
-    /**
-     * Responde al mensaje: bloquear() El Gestor solo dice "bloqueate", el
-     * evento sabe cómo hacerlo.
-     */
-    public void bloquear() {
-        LocalDateTime ahora = LocalDateTime.now(); 
-
-        // 1. Buscar actual y cerrar (Diagrama: loop -> sosActual -> setFechaHoraFin)
-        for (CambioEstado cambio : this.cambioEstado) {
-            if (cambio.sosActual()) {
-                cambio.setFechaHoraFin(ahora);
-            }
-        }
-
-        // 2. Crear nuevo Estado (Diagrama: new Estado)
-        // Usamos un ámbito genérico o hardcodeado según tu diagrama
-        Estado estadoBloqueado = new Estado("Revisión", "BloqueadoEnRevision");
-
-        // 3. Crear nuevo CambioEstado (Diagrama: new CambioEstado)
-        CambioEstado nuevoCambio = new CambioEstado(estadoBloqueado, ahora);
-
-        // 4. Agregar a la lista
-        this.cambioEstado.add(nuevoCambio);
-
-        // 5. Actualizar puntero de estado actual
-        this.estado = estadoBloqueado;
-    }
-    
-    
-    //Responde al mensaje: rechazar() => Tomar empleado
-    public void rechazar(Analista analistaLogueado) {
-        LocalDateTime ahora = LocalDateTime.now();
-
-        // 1. Cerrar anterior
-        for (CambioEstado cambio : this.cambioEstado) {
-            if (cambio.sosActual()) cambio.setFechaHoraFin(ahora);
-        }
-
-        // 2. Crear estado Rechazado
-        Estado estadoRech = new Estado("Finalizado", "Rechazado");
-        this.cambioEstado.add(new CambioEstado(estadoRech, ahora));
-        this.estado = estadoRech;
-        
-        // 3. Setear fin del evento y responsable
-        this.fechaHoraFin = ahora;
-        this.setResponsable(analistaLogueado);
-    }
-
     public Analista getResponsable() {
         return responsable;
     }
@@ -131,53 +96,10 @@ public class EventoSismico {
     public void setResponsable(Analista responsable) {
         this.responsable = responsable;
     }
-    
-    
-    
-    
-    
-    /**
-     * Responde al mensaje: rechazar()
-     
-    public void rechazar() {
-        LocalDateTime ahora = LocalDateTime.now();
-
-        // 1. Cerrar anterior
-        for (CambioEstado cambio : this.cambioEstado) {
-            if (cambio.sosActual()) {
-                cambio.setFechaHoraFin(ahora);
-            }
-        }
-
-        // 2. Crear nuevo
-        Estado estadoRechazado = new Estado("Finalizado", "Rechazado");
-        this.cambioEstado.add(new CambioEstado(estadoRechazado, ahora));
-        this.estado = estadoRechazado;
-
-        // 3. Setear fin del evento
-        this.fechaHoraFin = ahora;
-    }*/
-
-    /**
-     * Responde al mensaje: confirmar()
-     */
-public void confirmar(Analista analistaLogueado) {
-        LocalDateTime ahora = LocalDateTime.now();
-
-        for (CambioEstado cambio : this.cambioEstado) {
-            if (cambio.sosActual()) cambio.setFechaHoraFin(ahora);
-        }
-
-        Estado estadoConf = new Estado("Finalizado", "Confirmado");
-        this.cambioEstado.add(new CambioEstado(estadoConf, ahora));
-        this.estado = estadoConf;
-        
-        this.fechaHoraFin = ahora;
-        this.setResponsable(analistaLogueado);
-    }
 
     public boolean sosAutoDetectado() {
-        return this.estado != null && "AutoDetectado".equals(this.estado.getNombreEstado());
+        //return this.estado != null && "AutoDetectado".equals(this.estado.getNombre()); Viejo
+        return this.estado instanceof AutoDetectado; //Aplicando el state, aprovechamos para ver si es un objeto de la clase Autodetectado
     }
 
     public ClasificacionSismo getClasificacion() {
@@ -216,10 +138,6 @@ public void confirmar(Analista analistaLogueado) {
         return estado;
     }
 
-    public void setEstado(Estado estado) {
-        this.estado = estado;
-    }
-
     public ArrayList<CambioEstado> getCambioEstado() {
         return cambioEstado;
     }
@@ -227,11 +145,11 @@ public void confirmar(Analista analistaLogueado) {
     public void setCambioEstado(ArrayList<CambioEstado> cambioEstado) {
         this.cambioEstado = cambioEstado;
     }
-    
-    public void setValorMagnitud(Integer valorMagnitud){
+
+    public void setValorMagnitud(Integer valorMagnitud) {
         this.valorMagnitud = valorMagnitud;
     }
-    
+
     public List<SerieTemporal> getSerieTemporal() {
         return serieTemporal;
     }
@@ -256,10 +174,61 @@ public void confirmar(Analista analistaLogueado) {
         return valorMagnitud;
     }
 
-    @Override
-    public String toString() {
-        return "EventoSismico [estado=" + (estado != null ? estado.getNombreEstado() : "null") + "]";
+    public Integer getIdEvento() {
+        return idEvento;
     }
 
+    public void setIdEvento(Integer idEvento) {
+        this.idEvento = idEvento;
+    }
+    
+    
+    
+    //Metodos del STATE - Se delega al estado actual del evento sismico
+    public void bloquear() { //Pasos del analisis
+        // Delega al estado actual
+        this.estado.bloquear(this);
+    }
+
+    // Delegación al Estado Actual(Polimorfismo) en ambos confirmar y rechazar
+    public void rechazarEvento(LocalDateTime fechaHoraActual, Analista responsableLogueado) {
+
+        this.estado.rechazarEvento(this, fechaHoraActual, responsableLogueado);
+    }
+
+    public void confirmarEvento(LocalDateTime fechaHoraActual, Analista responsableLogueado) {
+        this.estado.confirmarEvento(this, fechaHoraActual, responsableLogueado);
+    }
+
+    /**
+     * Diagrama: agregarCambioEstado(nuevoCambio) Se encarga de cerrar el
+     * historial anterior y agregar el nuevo.
+     *
+     * @param nuevoCambio
+     */
+    public void agregarCambioEstado(CambioEstado nuevoCambio) {
+        // 1. Cerrar el estado anterior
+        for (CambioEstado c : this.cambioEstado) {
+            if (c.sosActual()) {
+                c.setFechaHoraFin(nuevoCambio.getFechaHoraInicio());
+            }
+        }
+        // 2. Agregar el nuevo
+        this.cambioEstado.add(nuevoCambio);
+    }
+
+    /**
+     * Diagrama: setEstadoActual(estado) Actualiza el puntero del estado.
+     *
+     * @param nuevoEstado
+     */
+    public void setEstadoActual(Estado nuevoEstado) {
+        this.estado = nuevoEstado;
+    }
+
+    @Override
+    public String toString() {
+        return "EventoSismico [estado=" + (estado != null ? estado.getNombre() : "null") + "]";
+    }
 
 }
