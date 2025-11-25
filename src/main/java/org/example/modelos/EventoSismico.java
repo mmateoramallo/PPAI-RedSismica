@@ -13,15 +13,11 @@ public class EventoSismico {
     private AlcanceSismo alcanceSismo;
     private Estado estado; //Tipo abstracto no se sabe que estado es, pero puede ser cualquiera
 
-
     private ArrayList<CambioEstado> cambioEstado = new ArrayList<>();
-       
 
-    
     //Mapear persistencia
     private Integer idEvento;
-    
-    
+
     private List<SerieTemporal> serieTemporal;
 
     private Analista responsable; //Integracion con el analista
@@ -42,10 +38,7 @@ public class EventoSismico {
     public void setFechaHoraFin(LocalDateTime fechaHoraFin) {
         this.fechaHoraFin = fechaHoraFin;
     }
-    
-    
-    
-    
+
     public EventoSismico() {
     }
 
@@ -181,9 +174,7 @@ public class EventoSismico {
     public void setIdEvento(Integer idEvento) {
         this.idEvento = idEvento;
     }
-    
-    
-    
+
     //Metodos del STATE - Se delega al estado actual del evento sismico
     public void bloquear() { //Pasos del analisis
         // Delega al estado actual
@@ -208,17 +199,12 @@ public class EventoSismico {
      *
      * @param nuevoCambio
      *
-    public void agregarCambioEstado(CambioEstado nuevoCambio) {
-        // 1. Cerrar el estado anterior
-        for (CambioEstado c : this.cambioEstado) {
-            if (c.sosActual()) {
-                c.setFechaHoraFin(nuevoCambio.getFechaHoraInicio());
-            }
-        }
-        // 2. Agregar el nuevo
-        this.cambioEstado.add(nuevoCambio);
-    }*/
-    
+     * public void agregarCambioEstado(CambioEstado nuevoCambio) { // 1. Cerrar
+     * el estado anterior for (CambioEstado c : this.cambioEstado) { if
+     * (c.sosActual()) { c.setFechaHoraFin(nuevoCambio.getFechaHoraInicio()); }
+     * } // 2. Agregar el nuevo this.cambioEstado.add(nuevoCambio);
+    }
+     */
     public void agregarCambioEstado(CambioEstado nuevoCambio) {
         this.cambioEstado.add(nuevoCambio);
     }
@@ -235,6 +221,14 @@ public class EventoSismico {
     @Override
     public String toString() {
         return "EventoSismico [estado del evento =" + (estado != null ? estado.getNombre() : "null") + "]";
+    }
+
+    public CambioEstado getUltimoCambioEstado() {
+        if (this.cambioEstado != null && !this.cambioEstado.isEmpty()) {
+            // Retorna el último agregado a la lista
+            return this.cambioEstado.get(this.cambioEstado.size() - 1);
+        }
+        return null;
     }
 
 }

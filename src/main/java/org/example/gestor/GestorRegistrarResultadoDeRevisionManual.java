@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import org.example.modelos.*;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.example.DAO.CambioEstadoDAO;
 import org.example.dao.*;
 
 
@@ -26,6 +27,7 @@ public class GestorRegistrarResultadoDeRevisionManual {
     private final AlcanceSismoDAO alcanceDAO;
     private final OrigenDeGeneracionDAO origenDAO;
     private final MagnitudRichterDAO magnitudDAO;
+    private final CambioEstadoDAO cambioEstadoDAO;
     
     public GestorRegistrarResultadoDeRevisionManual() {
         this.analistaLogueado = new Analista("Mateo", "Ramallo", "mateo.j.ramallo@gmail.com", "94441");
@@ -35,6 +37,7 @@ public class GestorRegistrarResultadoDeRevisionManual {
         this.origenDAO = new OrigenDeGeneracionDAO();
         this.magnitudDAO = new MagnitudRichterDAO();
         this.eventos = eventosDAO.buscarTodos();
+        this.cambioEstadoDAO = new CambioEstadoDAO();
     }
     
     
@@ -70,6 +73,15 @@ public void bloquearEventoSismico(EventoSismico evento) {
         eventoSeleccionado.rechazarEvento(fechaHoraActual, this.analistaLogueado);
         
         eventosDAO.actualizarEstado(eventoSeleccionado);
+        
+        // Obtenemos el objeto cambio que creó el patrón State
+        CambioEstado nuevoCambio = eventoSeleccionado.getUltimoCambioEstado();
+        
+        if (nuevoCambio != null) {
+            
+            cambioEstadoDAO.insertar(nuevoCambio, eventoSeleccionado.getIdEvento());
+            System.out.println(">> Historial guardado en BD: " + nuevoCambio.getEstado().getNombre());
+        }
     }
     
     //Concordancia despues de la seleion
