@@ -8,7 +8,7 @@ public class BloqueadoEnRevision extends Estado {
         super("BloqueadoEnRevision", "El evento está siendo revisado por un analista");
     }
 
-@Override
+/*@Override
     public void rechazarEvento(EventoSismico evento, LocalDateTime fechaHoraActual, Analista responsable) {
         
         // 1. Mensaje: crearEstado() -> :Rechazado
@@ -22,6 +22,32 @@ public class BloqueadoEnRevision extends Estado {
         evento.agregarCambioEstado(nuevoCambio);
 
         // 4. Mensaje: setEstadoActual(estadoActual, fechaHoraActual) -> :EventoSismico
+        evento.setEstadoActual(nuevoEstado);
+        
+        evento.setResponsable(responsable);
+    }*/
+    
+@Override
+    public void rechazarEvento(EventoSismico evento, LocalDateTime fechaHoraActual, Analista responsable) {
+        
+        // 1. Mensaje: crearEstado() -> :Rechazado
+        Estado nuevoEstado = Rechazado.crearEstado();        
+        for (CambioEstado cambio : evento.getCambioEstado()) {
+            // Mensaje: sosActual() -> :CambioEstado
+            if (cambio.sosActual()) {
+                // Mensaje: setFechaHoraFin(fechaHoraActual) -> :CambioEstado
+                cambio.setFechaHoraFin(fechaHoraActual);
+                
+            }
+        }
+
+        // 2. Mensaje: new(estadoActual, fechaHoraInicio, ASlogueado) -> :CambioEstado
+        CambioEstado nuevoCambio = new CambioEstado(nuevoEstado, fechaHoraActual, responsable);
+
+        // 3. Mensaje: agregarCambioEstado(nuevoCambioEstado) -> :EventoSismico
+        evento.agregarCambioEstado(nuevoCambio);
+
+        // 4. Mensaje: setEstadoActual(estadoActual) -> :EventoSismico
         evento.setEstadoActual(nuevoEstado);
         
         evento.setResponsable(responsable);

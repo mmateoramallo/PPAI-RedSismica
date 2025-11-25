@@ -13,8 +13,10 @@ public class EventoSismico {
     private AlcanceSismo alcanceSismo;
     private Estado estado; //Tipo abstracto no se sabe que estado es, pero puede ser cualquiera
 
-    //Experto
+
     private ArrayList<CambioEstado> cambioEstado = new ArrayList<>();
+       
+
     
     //Mapear persistencia
     private Integer idEvento;
@@ -191,10 +193,9 @@ public class EventoSismico {
     // Delegación al Estado Actual(Polimorfismo) en ambos confirmar y rechazar
     public void rechazarEvento(LocalDateTime fechaHoraActual, Analista responsableLogueado) {
 
-        this.estado.rechazarEvento(this, fechaHoraActual, responsableLogueado);
+        this.estado.rechazarEvento(this, fechaHoraActual, responsableLogueado); //Aca se pasa la referencia del evento sismico que se quiere bloquear en el this
         /*To-Do: El estado 'BloqueadoEnRevision' creará el 'new Rechazado()',
-        llamará a setEstadoActual(nuevo) y registrará el CambioEstado en la lista histórica.
-         Al volver aquí, 'this.estadoActual' ya será una instancia de Rechazado.*/
+        llamará a setEstadoActual(nuevo) y registrará el CambioEstado en la lista histórica, despues sera un estado rechazado*/
     }
 
     public void confirmarEvento(LocalDateTime fechaHoraActual, Analista responsableLogueado) {
@@ -206,7 +207,7 @@ public class EventoSismico {
      * historial anterior y agregar el nuevo.
      *
      * @param nuevoCambio
-     */
+     *
     public void agregarCambioEstado(CambioEstado nuevoCambio) {
         // 1. Cerrar el estado anterior
         for (CambioEstado c : this.cambioEstado) {
@@ -215,6 +216,10 @@ public class EventoSismico {
             }
         }
         // 2. Agregar el nuevo
+        this.cambioEstado.add(nuevoCambio);
+    }*/
+    
+    public void agregarCambioEstado(CambioEstado nuevoCambio) {
         this.cambioEstado.add(nuevoCambio);
     }
 
@@ -229,7 +234,7 @@ public class EventoSismico {
 
     @Override
     public String toString() {
-        return "EventoSismico [estado=" + (estado != null ? estado.getNombre() : "null") + "]";
+        return "EventoSismico [estado del evento =" + (estado != null ? estado.getNombre() : "null") + "]";
     }
 
 }

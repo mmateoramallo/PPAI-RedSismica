@@ -46,7 +46,9 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
     private List<EventoSismico> eventos;
     private final GestorRegistrarResultadoDeRevisionManual gestor;
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
+    
+    
+    
     public InterfazRegistrarResultadoDeRevisionManual() {
         super("Red Sísmica - Dashboard de Revisión");
         this.gestor = new GestorRegistrarResultadoDeRevisionManual();
@@ -353,7 +355,7 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         btnMapa.addActionListener(e -> 
             JOptionPane.showMessageDialog(dialog, "(Simulación) Mapa desplegado.")
         );
-
+        //Aca comienza para el rediseño, se tiene en cuenta las opciones que se pueden dar, pero desde aca se manda la opcion para que se rechaze el evento
         String[] opciones = {"Confirmar evento", "Rechazar evento", "Solicitar revisión experto"};
         JComboBox<String> comboAccion = new JComboBox<>(opciones);
         comboAccion.setFont(FONT_MAIN);
@@ -362,7 +364,7 @@ public class InterfazRegistrarResultadoDeRevisionManual extends JFrame {
         
         btnAceptar.addActionListener(e -> {
             String seleccion = (String) comboAccion.getSelectedItem();
-            if (gestor.confirmarAccionEvento(evento, seleccion)) {
+            if (gestor.confirmarAccionEvento(evento, seleccion)) { //Seria el tomar Rechazar  del diagrama no se pone esto por que no concordaria que se den todas las posibilidades y diga tomar rechazar  
                 JOptionPane.showMessageDialog(dialog, "Evento procesado: " + seleccion);
                 cargarEventos();
                 dialog.dispose();

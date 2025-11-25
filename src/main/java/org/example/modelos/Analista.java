@@ -84,14 +84,14 @@ public class Analista {
         this.contraseña = contraseña;
     }
 
-    public Analista(String apellido, String nombre, String mail, String legajo) {
-        this.apellido = apellido;
+
+    
+    public Analista(String nombre, String apellido, String mail, String legajo){
         this.nombre = nombre;
+        this.apellido = apellido;
         this.mail = mail;
         this.legajo = legajo;
     }
-    
-    
     
     public String getContraseña() {
         return contraseña;

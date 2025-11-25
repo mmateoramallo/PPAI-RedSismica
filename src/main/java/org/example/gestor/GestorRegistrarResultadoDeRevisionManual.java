@@ -71,10 +71,35 @@ public void bloquearEventoSismico(EventoSismico evento) {
         
         eventosDAO.actualizarEstado(eventoSeleccionado);
     }
-
+    
+    //Concordancia despues de la seleion
+    public static boolean validarDatos(EventoSismico evento){
+         if (evento.tomarMagnitud() == null || evento.getAlcanceSismo() == null || evento.getOrigenGeneracion() == null) {
+             System.out.println("Datos registrados del evento: " + evento.tomarMagnitud() + " Alcance " + evento.getAlcanceSismo() + " Origen: " + evento.getOrigenGeneracion());
+            return false;
+        }
+         return true;
+    }
+    
+    public static boolean validarSeleccion(EventoSismico eventoSeleccionado){
+        if(eventoSeleccionado != null){
+            System.out.println("Se selecciono un evento correctamente: " + eventoSeleccionado);
+            return true;
+        }
+        return false;
+    }
+    
 public boolean confirmarAccionEvento(EventoSismico evento, String accion) {
         if (evento.tomarMagnitud() == null || evento.getAlcanceSismo() == null || evento.getOrigenGeneracion() == null) {
             return false;
+        }
+        if(GestorRegistrarResultadoDeRevisionManual.validarSeleccion(evento)){
+            //Ver que si haya datos del evento
+            if(GestorRegistrarResultadoDeRevisionManual.validarDatos(evento)){
+                System.out.println("Datos correctos del evento");
+            }
+        }else{
+            System.out.println("No se selecciono un evento");
         }
         switch (accion) {
             case "Rechazar evento":
